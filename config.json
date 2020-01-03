@@ -1,0 +1,15 @@
+{
+    "SECRET_KEY" : "e5f89ffc73dbbbd5551ec60eda9e2f09",
+    "SQLALCHEMY_DATABASE_URI" : "mysql+pymysql://<USERNAME>:<PASSWORD>@127.0.0.1/iotassignment", 
+    "MAIL_USERNAME" : "<PLACEHOLDER>",
+    "MAIL_PASSWORD" : "<PLACEHOLDER>",
+    "twilio_account_sid" : "<PLACEHOLDER>",
+    "twilio_auth_token" : "<PLACEHOLDER>",
+    "twilio_my_hp" : "<PLACEHOLDER>",
+    "twilio_hp" : "<PLACEHOLDER>",
+    "telegram_bot_token" : "<PLACEHOLDER>",
+    "telegram_chat_id" : "<PLACEHOLDER>",
+    "admin_name" : "<PLACEHOLDER>",
+    "admin_email" : "<PLACEHOLDER>",
+    "admin_password" : "<PLACEHOLDER>" 
+}

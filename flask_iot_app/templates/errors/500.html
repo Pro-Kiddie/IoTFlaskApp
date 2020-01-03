@@ -1,0 +1,18 @@
+<!-- {% extends "layout_template.html" %}
+{% block content %}
+    <div class="content-section">
+        <h1>Something went wrong. Error Code: 500</h1></br>
+        <h3>We are experiencing some trouble on our end. Please try again in the future.</h3>
+    </div>
+{% endblock content %} -->
+
+{% extends "login_template.html" %}
+{% block content %}
+    <div class="content-section" style="text-align: center;">
+        <h3>Something went wrong.</h3>
+            </br>
+        <h3 style="color: red;"> Error Code: 500</h3>
+        </br>
+        <h4 style="margin-bottom: 25px;">We are experiencing some trouble. <a href="{{ url_for('main.Home') }}">Go to Home</a></h4>
+    </div>
+{% endblock content %}
