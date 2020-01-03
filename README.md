@@ -59,6 +59,8 @@ Custom Error Pages
   - For sending SMS alerts.
 - Telepot API
   - For Telegram bot.
+- ECharts
+  - Visualization of air quality data as graphs.
 
 
 ## Raspberry Pi Hardware Setup
