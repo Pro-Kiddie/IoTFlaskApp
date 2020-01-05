@@ -2,7 +2,7 @@ import argparse, os, json
 from flask_iot_app import app, db, bcrypt
 from flask_iot_app.models import User
 
-parser = argparse.ArgumentParser(description="IoT Flask Web Application")
+parser = argparse.ArgumentParser(description="Flask Web Server of this IoT Application")
 parser.add_argument("-d", "--debug", action="store_true", default=False, dest="debug", help="Run application in debug mode.")
 parser.add_argument("-l", "--local", action="store_true", default=False, dest="local", help="Make application run on 127.0.0.1. Externally invisible.")
 args = parser.parse_args()

@@ -36,7 +36,8 @@ Custom Error Pages
 - Flask-login
    - Flask login manager for access controls. 
 - Flask-mail
-   - Sending emails with email server and account details provided.
+   - Sending emails with email server and account details provided
+- Flask Blueprint
 - TimedJSONWebSignatureSerializer
    - Generates one-time password reset URLs and able to store information such as user ID with the URL for verification purpose.
 - SQLAlchemy
@@ -60,7 +61,7 @@ Custom Error Pages
 - Telepot API
   - For Telegram bot.
 - ECharts
-  - Visualization of air quality data as graphs.
+  - Javascript visualization library to view historical air quality data as graphs.
 
 
 ## Raspberry Pi Hardware Setup
@@ -126,15 +127,32 @@ dmesg | grep ‘ch341-uart converter now attached to ttyUSB0’ # To confirm Ras
    # Install dependencies in virtual env
    pip install -r requirements.txt
 
-   # To run Flask web server: 
+   # To run Flask web server of this IoT Application: 
    python3 run.py
+   # usage: run.py [-h] [-d] [-l]
+   # Flask Web Server of this IoT Application
 
-   # To run PM Sensor, launch another shell
+   # optional arguments:
+   #   -h, --help   show this help message and exit
+   #   -d, --debug  Run application in debug mode.
+   #   -l, --local  Make application run on 127.0.0.1. Externally invisible.
+
+   # To run IoT component of this IoT Application:
+   # Launch another shell
    source env/bin/activate # Activate the virutual environment
+   python3 iots.py
+   # usage: iots.py [-h] [-pm25 value] [-pm10 value]
+   # IoT Component of this IoT Application
+
+   # optional arguments:
+   #  -h, --help   show this help message and exit
+   #  -pm25 value  PM 2.5 Threshold to On LED and Send SMS Alert.
+   #  -pm10 value  PM 10 Threshold to On LED and Send SMS Alert.
+
+   # If you wish to run the different parts of the IoT component separately
+   # To run the PM Sensor:
    python3 pm_sensor.py # Or you can run pm_sensor_random.py if you do not have a SDS011 sensor
-   
-   # To run Door Motion Capture with Telegram Bot, launch another shell
-   source env/bin/activate # Activate the virutual environment
+   # To run Door Motion Capture with Telegram Bot:
    python3 aq_door_telegram_bot.py
 8)	Login with admin_email and admin_password.
 
