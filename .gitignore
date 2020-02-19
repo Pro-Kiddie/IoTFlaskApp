@@ -2,4 +2,4 @@
 setup_flask_env.bat
 **/__pycache__/
 **/env/
-config_mine.json
+*_mine.json

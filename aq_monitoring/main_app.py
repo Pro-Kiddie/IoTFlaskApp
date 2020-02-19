@@ -1,7 +1,7 @@
-import threading, serial, json, secrets, boto3, re, telepot
-from models import AirQuality, Status, Device
+import threading, serial, json, boto3, re, telepot, sys, base64
+from models import Device
 from rpi_lcd import LCD
-from gpiozero import LED, Buzzer
+from gpiozero import LED, Buzzer, MotionSensor
 from twilio.rest import Client
 from datetime import datetime, timedelta
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
@@ -9,6 +9,7 @@ from time import sleep
 from picamera import PiCamera
 from io import BytesIO
 from telepot.loop import MessageLoop
+from PIL import Image
 
 class MainApp():
 
@@ -24,8 +25,8 @@ class MainApp():
     # Global variables for PM Sensor
     pm25 = 0
     pm10 = 0
-    pm25_threshold = None
-    pm10_threshold = None
+    pm25Threshold = None
+    pm10Threshold = None
     #pm_lock = threading.Lock(j) # Not really needed. https://stackoverflow.com/questions/3714613/python-safe-to-read-values-from-an-object-in-a-thread
 
     # Global variable for Buzzer
@@ -36,6 +37,9 @@ class MainApp():
     # Global variable for telegram bot
     telegram_chat_id = None
     telegram_bot = None
+
+    # Global variable for PiCamera
+    camera_lock = threading.Lock()
 
     def __init__(self, config_file):
         # Only allow one instance of this class
@@ -60,25 +64,28 @@ class MainApp():
         if not MainApp.mqtt_client.connect():
             raise Exception("Unable to connect to AWS MQTT broke.")
 
-        MainApp.pm25_threshold = float(MainApp.config["device_components"]["pm25_threshold"]) # Use [] operator instead of .get() to throw exception if any
-        MainApp.pm10_threshold = float(MainApp.config["device_components"]["pm10_threshold"])
+        MainApp.pm25Threshold = float(MainApp.config["device_components"]["pm25Threshold"]) # Use [] operator instead of .get() to throw exception if any
+        MainApp.pm10Threshold = float(MainApp.config["device_components"]["pm10Threshold"])
 
         MainApp.buzzer = Buzzer(5)
         MainApp.buzzer_status = MainApp.config["device_components"]["buzzer"]
 
         MainApp.telegram_chat_id = MainApp.config["telegram_chat_id"]
         MainApp.telegram_bot =  telepot.Bot(MainApp.config["telegram_bot_token"])
-    
+
+        # Publish all status -> Sync with database in case of restart
+        for c, v in MainApp.config["device_components"].items():
+            payload = {"device_comp" : "{}_{}".format(MainApp.device_id, c), "status" : v}
+            MainApp.mqtt_client.publish("status/{}".format(MainApp.device_id), json.dumps(payload), 1)
+            
+        # Subscribe to device's own status and update if there is any change
+        MainApp.mqtt_client.subscribe("status/{}/+".format(MainApp.device_id), 1, self._update_status)
+
     def _pm_sensor(self):
         # Local variables for PM sensor
         seri = serial.Serial("/dev/ttyUSB0")
         lcd = LCD()
         led = LED(16)
-        twilio_account_sid = MainApp.config.get("twilio_account_sid")
-        twilio_auth_token = MainApp.config.get("twilio_auth_token")
-        twilio_my_hp = MainApp.config.get("twilio_my_hp") # Can retrieve from database the different numbers to send sms
-        twilio_hp = MainApp.config.get("twilio_hp")
-        client = Client(twilio_account_sid, twilio_auth_token)
 
         next_alert_time = datetime.now()
 
@@ -96,19 +103,20 @@ class MainApp():
                 MainApp.pm_10 = int.from_bytes(b"".join(data[4:6]), byteorder="little") / 10
 
                 now = datetime.now()
+                now_str = now.strftime("%Y-%m-%d %H:%M:%S")
                 
                 # Publish AQ data to MQTT channel which will be stored into DB by AWS rule
                 payload = {"device_id" : MainApp.device_id, 
                            "timestamp" : datetime.utcnow().isoformat(), 
                            "pm_25" : MainApp.pm_25,
                            "pm_10" : MainApp.pm_10 }
-                MainApp.mqtt_client.publish("{}/aq".format(MainApp.device_id), json.dumps(payload), 1)
+                MainApp.mqtt_client.publish("aq", json.dumps(payload), 1)
                 
                 # Display readings onto console
-                print("PM Sensor Thread\t\t {}\t PM 2.5: {:.1f}\t PM 10: {:.1f}".format(now.strftime("%Y-%m-%d %H:%M:%S"), MainApp.pm_25, MainApp.pm_10))
+                print("PM Sensor Thread\t\t {}\t PM 2.5: {:.1f}\t PM 10: {:.1f}".format(now_str, MainApp.pm_25, MainApp.pm_10))
                 
                 # Both PM2.5 and PM10 within healthy range
-                if MainApp.pm_25 <= MainApp.pm25_threshold and MainApp.pm_10 <= MainApp.pm10_threshold:
+                if MainApp.pm_25 <= MainApp.pm25Threshold and MainApp.pm_10 <= MainApp.pm10Threshold:
                     # Display readings onto LCD
                     lcd.text("PM 2.5: {:.1f}".format(MainApp.pm_25), 1)
                     lcd.text("PM 10: {:.1f}".format(MainApp.pm_10), 2)
@@ -116,173 +124,227 @@ class MainApp():
                     if led.is_lit:
                         led.off()
                         # Launch another daemon thread to update LED status in db
-                        t = threading.Thread(target=self._update_status, name="update_status", args=("led", "off"), daemon=True)
-                        t.start()
+                        payload = {"device_comp" : "{}_{}".format(MainApp.device_id, "led"),
+                                   "status" : "off"}
+                        MainApp.mqtt_client.publish("status/{}".format(MainApp.device_id), json.dumps(payload), 1)
+                        print("PM Sensor Thread\t\t {}\t Turned Off LED".format(now_str))
 
                 # Either or both PM2.5 and PM10 exceeded healthy range
                 else:
                     # Display readings onto LCD
-                    lcd.text("PM {}: {:.1f}".format("2.5" if MainApp.pm_25 > MainApp.pm25_threshold else "10", MainApp.pm_25 if MainApp.pm_25 > MainApp.pm25_threshold else MainApp.pm_10), 1) # Priority in displaying PM2.5 value if both unhealthy
+                    lcd.text("PM {}: {:.1f}".format("2.5" if MainApp.pm_25 > MainApp.pm25Threshold else "10", MainApp.pm_25 if MainApp.pm_25 > MainApp.pm25Threshold else MainApp.pm_10), 1) # Priority in displaying PM2.5 value if both unhealthy
                     lcd.text("Alerting NEA!", 2)
                     # Turn on LED if it is off
                     if not led.is_lit:
                         led.on()
-                        t = threading.Thread(target=self._update_status, name="update_status", args=("led", "on"), daemon=True)
-                        t.start()
+                        payload = {"device_comp" : "{}_{}".format(MainApp.device_id, "led"),
+                                   "status" : "on"}
+                        MainApp.mqtt_client.publish("status/{}".format(MainApp.device_id), json.dumps(payload), 1)
+                        print("PM Sensor Thread\t\t {}\t Turned On LED".format(now_str))
 
                     # Send alerts every 1 hour
                     if next_alert_time < now:
                         camera = None
+                        MainApp.camera_lock.acquire()
                         try:
-                            # Send SMS
-                            sms = "Unhealthy air quality observed at {}.\nPlease investigate!\nPM2.5: {:.1f}\nPM10: {:.1f}".format(MainApp.device_id, MainApp.pm_25, MainApp.pm_10)
-                            client.api.account.messages.create(to=twilio_my_hp, from_=twilio_hp, body=sms)
+                            # Publish to AQ Alert to trigger Lambda to sent SMS
+                            payload = {"device_id" : MainApp.device_id, 
+                                       "pm_25" : MainApp.pm_25,
+                                       "pm_10" : MainApp.pm_10 }
+                            MainApp.mqtt_client.publish("aq/sms", json.dumps(payload), 0)
+                            print("PM Sensor Thread\t\t {}\t Alert SMS Sent.".format(now_str))
 
-                            # Take photo of factory and upload to S3
+                            # Take a photo of factory monitered
                             camera = PiCamera(resolution=(1280,720))
                             sleep(2) # Let camera warm up
                             with BytesIO() as pic_stream: # Save captured image to RAM instead of disk, faster
                                 camera.capture(pic_stream, "jpeg")
-                                pic_stream.seek(0) # Seek to start of buffer as cursor currently at end. If not, upload_fileobj() later will read 0 bytes. https://stackoverflow.com/questions/53485708/how-the-write-read-and-getvalue-methods-of-python-io-bytesio-work
-                                s3 = boto3.client("s3")
-                                s3_fn = MainApp.device_id + "_" + secrets.token_hex(8) + ".jpg"
-                                # Successful S3 image upload will trigger the AWS Lambda function configured.
+                                pic_stream.seek(0) # Seek to start of buffer as cursor currently at end.
+
+                                # Compress image as the maximum MQTT payload in AWS IoT Core is only 128kB.
+                                im = Image.open(pic_stream)
+                                im.resize((480,270), Image.ANTIALIAS)
+                                buffer = BytesIO()
+                                im.save(buffer, "JPEG", optimize=True, quality=80)
+                                buffer.seek(0)
+
+                                # Publish to AQ Image and the lambda will upload the image to S3
+                                # Successful S3 image upload will trigger the another AWS Lambda function configured.
                                 # The Lambda function sends the image to Rekognition
-                                # And saves the device_id, S3 image_name and labels detected in DB
-                                s3.upload_fileobj(pic_stream, MainApp.config["aws_s3_bucket"], s3_fn)
+                                # Before saveing the device_id, S3 image_name and labels detected in DB
+
+                                # Cannot publish in bytearray as AWS Lambda can only be invoked by sending JSON data! https://forums.aws.amazon.com/thread.jspa?threadID=225051 
+                                # if sys.getsizeof(buffer) < 128000:
+                                    # payload = bytearray(buffer.read())
+                                    # MainApp.mqtt_client.publish("aq/image/{}".format(MainApp.device_id), payload, 1)
+
+                                payload = {"image" : base64.b64encode(buffer.read()).decode("utf-8")}
+                                buffer.seek(0)
+                                buffer.truncate()
+                                buffer.write(json.dumps(payload).encode())
+                                if sys.getsizeof(buffer) < 128000: 
+                                    MainApp.mqtt_client.publish("aq/image/{}".format(MainApp.device_id), json.dumps(payload), 1)
+                                    print("PM Sensor Thread\t\t {}\t Image Taken and Uploaded.".format(now_str))
+                                else:
+                                    print("PM Sensor Thread\t\t {}\t Sent Failed. Encoded Image Size Exceeded 128kb.".format(now_str))
+                                buffer.close()
 
                                 # Send image taken via telegram - <TO DO> if have time
+
                         except Exception as e:
                             print(e)
                             print("Failed to perform Unhealthy Alerat opeartions. Retry in an hour.")
-                        else:
-                            pass
-                            # Successfully uploaded to S3 -> publish to MQTT to trigger AWS IoT Rule 
-                            # NO NEED ANYMORE! Successful S3 upload above will trigger lambda straight away which saves resources from publish MQTT message
-                            #payload = {"aws_s3_bucket" : MainApp.config["aws_s3_bucket"], "s3_fn" : s3_fn}
-                            #MainApp.mqtt_client.publish("{}/images".format(MainApp.config["device_id"]), json.dumps(payload), 1)
                         finally:
                             # Add 1 hour to next_alert_time, so will only perform Alert opeartions hourly
                             next_alert_time += timedelta(hours=1)
+                            # Release camera for other threads
                             if camera != None: 
                                 camera.close() # Always close camera 
-                
-                sleep(10)
+                            MainApp.camera_lock.release()
                 
             except Exception as e:
                 print(e)
                 print("PM Sensor Thread - Exception. Recovering...")
-
-    def _update_status(self, component, status):
-        try:
-            hash_key = MainApp.device_id + "_" + component
-            new_status = Status(hash_key)
-            new_status.update(actions=[Status.status.set(status)])
-        except Exception as e:
-            print(e)
-            print("Update Status Thread - Exception. Failed to update {} status.".format(component))
-
-    def _update_pm_threshold(self):
-        while True:
-            try:
-                pm25 = Status.get(MainApp.device_id + "_" + "pm25_threshold")
-                pm10 = Status.get(MainApp.device_id + "_" + "pm10_threshold")
-            except Exception as e:
-                print(e)
-                print("PM Threshold Update Thread - Exception. Recovering...")
-            else:
-                MainApp.pm25_threshold = float(pm25.status)
-                MainApp.pm10_threshold = float(pm10.status)
-                # print("PM Threshold Update Thread\t {}\t Updated PM Thresholds".format(datetime.now().strftime("%Y-%m-%d %H:%M:%S")))
             finally:
-                sleep(17)
-    
-    def _update_buzzer(self):
-        while True:
-            try:
-                bs = Status.get(MainApp.device_id + "_" + "buzzer").status # Taking the buzzer status stored on db as the true status as web app can only modify the status in db
-                if bs == MainApp.buzzer_status:
-                    continue
+                sleep(10)
+
+    def _update_status(self, client, userdata, message):
+        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        try:
+            payload = json.loads(message.payload)
+            comp = payload["comp"] # pm25Threshold, pm10Threshold, buzzer
+            status = payload["status"]  # Taking the status stored on db as the true status as web app can only modify the status in db
+            if comp == "pm25Threshold":
+                MainApp.pm25Threshold = float(status)
+                print("Update Status Thread\t\t {}\t PM 2.5 Threshold Updated.".format(now_str))
+            elif comp == "pm10Threshold":
+                MainApp.pm10Threshold = float(status)
+                print("Update Status Thread\t\t {}\t PM 10 Threshold Updated.".format(now_str))
+            elif comp == "buzzer" and status != MainApp.buzzer_status:
                 # local buzzer status different from the buzzer status on db, update local status
                 with MainApp.buzzer_lock:
-                    if bs == "on":
+                    if status == "on":
                         MainApp.buzzer.on()
-                        MainApp.buzzer_status = "on"
-                    elif bs == "off":
+                        MainApp.buzzer_status = status
+                        print("Update Status Thread\t\t {}\t Turned On Buzzer.".format(now_str))
+                    elif status == "off":
                         MainApp.buzzer.off()
-                        MainApp.buzzer_status = "off"
-            except Exception as e:
-                print(e)
-                print("Buzzer Status Update Thread - Exception. Recovering...")
-            finally:
-                sleep(5)
+                        MainApp.buzzer_status = status
+                        print("Update Status Thread\t\t {}\t Turned Off Buzzer.".format(now_str))
+        except Exception as e:
+            print(e)
+            print("Update Status Thread - Exception. Failed to update {} status.".format(comp))
 
     def _telegram_respond(self, msg):
         telegram_chat_id = msg["chat"]["id"]
         command = msg["text"]
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
         print("Telegram Bot Thread \t\t {}\t Received command: {}".format(now_str, command))
+
         try:
-            if re.compile(r"on ?(all|%s) ?(sound|buzzer|warning)" % MainApp.device_id, re.IGNORECASE).search(command) != None:
-                with MainApp.buzzer_lock:
-                    MainApp.buzzer.on()
-                    t = threading.Thread(target=self._update_status, name="update_status", args=("buzzer", "on"), daemon=True)
-                    t.start()
-                    MainApp.buzzer_status = "on"
+            if re.compile(r"\bon ?(all|%s) ?(sound|buzzer|warning)\b" % MainApp.device_id, re.IGNORECASE).search(command) != None:
+                with MainApp.buzzer_lock: # Lock ensures if update_status thread is changing the buzzer state, this thread will get the latest buzzer status 
+                    if MainApp.buzzer_status != "on":
+                        MainApp.buzzer.on()
+                        MainApp.buzzer_status = "on"
+                        payload = {"device_comp" : "{}_{}".format(MainApp.device_id, "buzzer"),
+                                    "status" : "on"}
+                        MainApp.mqtt_client.publish("status/{}".format(MainApp.device_id), json.dumps(payload), 1)
                 MainApp.telegram_bot.sendMessage(telegram_chat_id, "Device ID: {}\nUnhealthy Air Quality Warning Sound Has Been Turned On!".format(MainApp.device_id))
                 print("Telegram Bot Thread \t\t {}\t Turned on Buzzer.".format(now_str))
 
-            elif re.compile(r"off ?(all|%s) ?(sound|buzzer|warning)" % MainApp.device_id, re.IGNORECASE).search(command) != None:
+            elif re.compile(r"\boff ?(all|%s) ?(sound|buzzer|warning)\b" % MainApp.device_id, re.IGNORECASE).search(command) != None:
                 with MainApp.buzzer_lock:
-                    MainApp.buzzer.off()
-                    t = threading.Thread(target=self._update_status, name="update_status", args=("buzzer", "off"), daemon=True)
-                    t.start()
-                    MainApp.buzzer_status = "off"
+                    if MainApp.buzzer_status != "off":
+                        MainApp.buzzer.off()
+                        MainApp.buzzer_status = "off"
+                        payload = {"device_comp" : "{}_{}".format(MainApp.device_id, "buzzer"),
+                                    "status" : "off"}
+                        MainApp.mqtt_client.publish("status/{}".format(MainApp.device_id), json.dumps(payload), 1)
                 MainApp.telegram_bot.sendMessage(telegram_chat_id, "Device ID: {}\nUnhealthy Air Quality Warning Sound Has Been Turned Off!".format(MainApp.device_id))
                 print("Telegram Bot Thread \t\t {}\t Turned off Buzzer.".format(now_str))
 
-            elif re.compile(r"get ?(all|%s) ?((aq)|(air quality))" % MainApp.device_id, re.IGNORECASE).search(command) != None:
+            elif re.compile(r"\bget ?(all|%s) ?((aq)|(air quality))\b" % MainApp.device_id, re.IGNORECASE).search(command) != None:
                 reply = "Device ID: {}\nCurrent Air Quality:\nPM 2.5: {:.1f}\nPM 10: {:.1f}".format(MainApp.device_id, MainApp.pm_25, MainApp.pm_10)
                 MainApp.telegram_bot.sendMessage(telegram_chat_id, reply)
                 print("Telegram Bot Thread \t\t {}\t Retrieved Air Quality.".format(now_str))
 
-            elif re.compile(r"get (id|device)s", re.IGNORECASE).search(command) != None:
-                reply = "All Device IDs:\n"
-                for device in Device.scan():
-                    reply += (device.device_id + "\n")
-                MainApp.telegram_bot.sendMessage(telegram_chat_id, reply)
-                print("Telegram Bot Thread \t\t {}\t Retrieved All Device IDs.".format(now_str))
-
+            elif re.compile(r"\b(all|%s) ?take ?(photo|image|img|pic(ture)?)\b" % MainApp.device_id, re.IGNORECASE).search(command) != None:
+                try:
+                    MainApp.camera_lock.acquire()
+                    camera = PiCamera(resolution=(1280,720))
+                    sleep(2)
+                    with BytesIO() as pic_stream:
+                        camera.capture(pic_stream, "jpeg")
+                        pic_stream.seek(0)
+                        MainApp.telegram_bot.sendPhoto(MainApp.telegram_chat_id, pic_stream, caption="Device ID: {}\nFactory Photo Taken.".format(MainApp.device_id))
+                    print("Telegram Bot Thread \t\t {}\t Photo Taken and Send to User.".format(now_str))
+                except Exception as e:
+                    print(e)
+                finally:
+                    if camera != None:
+                        camera.close()
+                    MainApp.camera_lock.release()
             else:
-                reply = '''Sorry! Invalid Command.\n
-"get devices" - Get all the device IDs.
-"get <all | device_id> AQ" - Get real-time PM2.5 and PM10 reading from all devices or the device with device ID specified.
-"on <all | device_id> buzzer" - Play the warning sound for factories monitored. 
-"off <all | device_id> buzzer" - Stop the warning sound.'''
-                MainApp.telegram_bot.sendMessage(telegram_chat_id, reply)
+                print("Telegram Bot Thread \t\t {}\t Unknown Command.".format(now_str))
+
+            # The bot running on each device should not respond to the two requests below
+            # They should be only replied once -> a bot running with the web app
+#             elif re.compile(r"get (id|device)s", re.IGNORECASE).search(command) != None:
+#                 reply = "All Device IDs:\n"
+#                 for device in Device.scan():
+#                     reply += (device.device_id + "\n")
+#                 MainApp.telegram_bot.sendMessage(telegram_chat_id, reply)
+#                 print("Telegram Bot Thread \t\t {}\t Retrieved All Device IDs.".format(now_str))
+
+#             else:
+#                 reply = '''Sorry! Invalid Command.\n
+# "get devices" - Get all the device IDs.
+# "get <all | device_id> AQ" - Get real-time PM2.5 and PM10 reading from all devices or the device with device ID specified.
+# "on <all | device_id> buzzer" - Play the warning sound for factories monitored. 
+# "off <all | device_id> buzzer" - Stop the warning sound.'''
+#                 MainApp.telegram_bot.sendMessage(telegram_chat_id, reply)
         except Exception as e:
             print(e)
+            print("Telegram Bot Thread - Exception. Recovering ...")
+
+    def _motion_sensor(self):
+        motionsensor = MotionSensor(13, sample_rate=6, queue_len=1)
+        while True:
+            try:
+                motionsensor.wait_for_motion()
+                now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                print("Motion Sensor Thread \t\t {}\t Suspicious Motion Detected At Device.".format(now_str))
+                MainApp.camera_lock.acquire()
+                camera = PiCamera(resolution=(1280,720))
+                sleep(2)
+                with BytesIO() as pic_stream:
+                    camera.capture(pic_stream, "jpeg")
+                    pic_stream.seek(0)
+                    MainApp.telegram_bot.sendPhoto(MainApp.telegram_chat_id, pic_stream, caption="{}\nDevice ID: {}\nSuspicious Motion Detected!\nSomeone Maybe Sabotaging the Air Quality Monitoring Device.".format(now_str, MainApp.device_id))
+                    print("Motion Sensor Thread \t\t {}\t Image Taken and Sent to User.".format(now_str))
+            except Exception as e:
+                print(e)
+                print("Motion Sensor Thread - Exception. Recovering ...")
+            finally:
+                if camera != None:
+                    camera.close()
+                MainApp.camera_lock.release()
+                motionsensor.wait_for_no_motion()
+                sleep(10)
     
     def run_pm_sensor(self):
-        t = threading.Thread(target=self._pm_sensor, name="pm_sensor")
-        t.setDaemon(True) # Launch as daemon thread which will end automatically when main thread ends and does not block main thread
-        MainApp.iot_threads.append(t)
-        t.start()
-
-    def run_update_pm_threshold(self):
-        t = threading.Thread(target=self._update_pm_threshold, name="update_pm_threshold")
-        t.setDaemon(True) # Launch as daemon thread which will end automatically when main thread ends and does not block main thread
-        MainApp.iot_threads.append(t)
-        t.start()           
-
-    def run_update_buzzer(self):
-        t = threading.Thread(target=self._update_buzzer, name="update_buzzer")
-        t.setDaemon(True) # Launch as daemon thread which will end automatically when main thread ends and does not block main thread
+        t = threading.Thread(target=self._pm_sensor, name="pm_sensor", daemon=True)# Launch as daemon thread which will end automatically when main thread ends and does not block main thread
         MainApp.iot_threads.append(t)
         t.start()
 
     def run_telegram_bot(self):
-        t = MessageLoop(MainApp.telegram_bot, self._telegram_respond).run_as_thread()
-        # print(t == None)
+        _ = MessageLoop(MainApp.telegram_bot, self._telegram_respond).run_as_thread()
+        # print(_ == None) -> True
+
+    def run_motion_sensor(self):
+        t = threading.Thread(target=self._motion_sensor, name="motion_sensor", daemon=True)
+        MainApp.iot_threads.append(t)
+        t.start()
+
    
