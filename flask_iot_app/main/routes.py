@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from flask import Blueprint, render_template, flash
+from flask import Blueprint, render_template, jsonify, flash
 from flask_login import login_required
 # from flask_iot_app.iot.models import ImageCapture
 from flask_iot_app.models import AQImage, Status
@@ -44,6 +44,20 @@ def Home():
 @login_required 
 def Factory(device_id):
     # captures = ImageCapture.query.order_by(ImageCapture.id.desc()).limit(4).all()
+    # Retrieve records about the last 5 image taken when AQ thresholds are exceeded for that device
+    last_5_images = AQImage.query(device_id, scan_index_forward=False, limit=5)
+    image_dict = {}
+    timestamp_dict = {}
+    for image in last_5_images:
+        label_dict = {}
+        for label in image.labels:
+            label_dict[label] = round(image.labels[label], 2)
+        if(not label_dict):
+            label_dict["None"] = 0
+        image_dict[image.fn] = label_dict
+        timestamp_dict[image.fn] = image.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+
+    # Create the form for updating PM thresholds for the device which will be rendered in the model
     form = UpdateThresholdForm(device_id=device_id)
     if form.validate_on_submit():
         new_pm25 = Status(form.device_id.data + "_pm25Threshold")
@@ -51,7 +65,7 @@ def Factory(device_id):
         new_pm25.update(actions=[Status.status.set(str(round(float(form.pm_25.data), 1)))])
         new_pm10.update(actions=[Status.status.set(str(round(float(form.pm_10.data), 1)))])
         flash("PM 2.5 and PM 10 thresholds updated.", "success")
-    return render_template('dashboard.html', device_id=device_id, form=form)#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
+    return render_template('dashboard.html', device_id=device_id, image_dict=image_dict, timestamp_dict=timestamp_dict, form=form)#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
 
 # Door Camera Page
 @main.route("/door_camera")

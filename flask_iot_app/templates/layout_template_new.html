@@ -69,10 +69,6 @@
                             <a class="js-arrow" href="{{ url_for('main.Home') }}">
                                 <i class="fas fa-tachometer-alt"></i>Dashboard</a>
                         </li>
-                        <li>
-                            <a href="{{ url_for('users.Account') }}">
-                                <i class="fa fa-user"></i>Account</a>
-                        </li>
                         <li class="has-sub">
                             <a class="js-arrow" href="#">
                                 <i class="fas fa-industry"></i>Factories</a>
@@ -84,6 +80,10 @@
                                     </li>
                                 {% endfor %}
                             </ul>
+                        </li>
+                        <li>
+                            <a href="{{ url_for('users.Account') }}">
+                                <i class="fa fa-user"></i>Account</a>
                         </li>
                         <li>
                             <a href="{{ url_for('users.Create_Account') }}">
@@ -113,10 +113,6 @@
                             <a class="js-arrow" href="{{ url_for('main.Home') }}">
                                 <i class="fas fa-tachometer-alt"></i>Dashboard</a>
                         </li>
-                        <li>
-                            <a href="{{ url_for('users.Account') }}">
-                                <i class="fa fa-user"></i>Account</a>
-                        </li>
 
                         <li class="has-sub">
                             <a class="js-arrow" href="#">
@@ -131,6 +127,11 @@
                             </ul>
                         </li>
                         
+                        <li>
+                            <a href="{{ url_for('users.Account') }}">
+                                <i class="fa fa-user"></i>Account</a>
+                        </li>
+
                         <li>
                             <a href="{{ url_for('users.Create_Account') }}">
                                 <i class="fas fa-plus"></i>Create Account</a>

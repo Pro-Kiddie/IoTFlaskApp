@@ -139,33 +139,42 @@
         <div class="au-card au-card--no-shadow au-card--no-pad">
             <div class="au-card-title" style="background-image:url('/static/images/bg-title-02.jpg');">
                 <div class="bg-overlay bg-overlay--blue"></div>
-                <h3><i class="zmdi zmdi-comment-text"></i>Motion Detected at Door Step</h3>
+                <h3><i class="zmdi zmdi-comment-text"></i>Air Quality Threshold Alert History for <span style="text-transform:capitalize;">{{ device_id }}</span></h3>
             </div>
 
             <div class="au-inbox-wrap js-inbox-wrap">
                 <div class="au-message js-list-load">
                     <div class="au-message-list">
-                        {% for capture in captures %}
-                        <div class="au-message__item">
-                            <div class="au-message__item-inner">
-                                <div class="au-message__item-text">
-                                    <div class="avatar-wrap" style="position:unset;">
-                                        <div class="avatar" style="background-image: url('/static/captured_img/{{ capture.image }}');background-size: 100% 100%;border-radius: 0%; -webkit-border-radius: 0% ">
+                        {% for image in image_dict %}
+                            <div class="au-message__item">
+                                <div class="au-message__item-inner">
+                                    <div class="au-message__item-text">
+                                        <div class="avatar-wrap" style="position:unset;">
+                                            <div class="avatar" style="background-image:url({{ url_for('iot.renderImage', fn = device_id + '_' + image) }});background-size: 100% 100%;border-radius: 0%; -webkit-border-radius: 0% ">
+                                            </div>
+                                        </div>
+                                        <div class="text">
+                                            <h5 class="name">
+                                                {{ timestamp_dict[image] }}
+                                            </h5>
+                                            <p>
+                                            Labels Detected: 
+                                            {% for label in image_dict[image] %}
+                                                {% if label == 'None' %}
+                                                    None
+                                                {% else %}
+                                                    ({{ label }}, {{ image_dict[image][label] }})
+                                                {% endif %}
+                                            {% endfor %}
+                                            </p>
                                         </div>
                                     </div>
-                                    <div class="text">
-                                        <h5 class="name">
-                                            {{ capture.timestamp.replace(tzinfo=timezone.utc).astimezone(tz=None).strftime("%Y-%m-%d %H:%M:%S") }}
-                                        </h5>
-                                        <p>Stranger Detected.</p>
+                                    <div class="au-message__item-time">
+                                        <a href="{{ url_for('iot.renderImage', fn = device_id + '_' + image) }}"
+                                            class="btn-sm btn-primary">View</a>
                                     </div>
                                 </div>
-                                <div class="au-message__item-time">
-                                    <a href="{{ url_for('static', filename='captured_img/' + capture.image) }}"
-                                        class="btn-sm btn-primary">View</a>
-                                </div>
                             </div>
-                        </div>
                         {% endfor %}
                     </div>
                 </div>
