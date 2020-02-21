@@ -4,3 +4,5 @@ setup_flask_env.bat
 **/env/
 *_mine.json
 function.zip
+flask_iot_app/config.py
+flask_iot_app/config.py

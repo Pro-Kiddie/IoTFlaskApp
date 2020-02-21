@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from flask import Blueprint, render_template, jsonify, flash
+from flask import Blueprint, render_template, jsonify, flash, Markup
 from flask_login import login_required
 # from flask_iot_app.iot.models import ImageCapture
 from flask_iot_app.models import AQImage, Status
@@ -35,10 +35,22 @@ main = Blueprint("main", __name__)
 # Pages
 # Air Quality Page
 @main.route("/home") # Function Decorators provided by Flask -> Takes in our function and serve it when the route is accessed
-@login_required 
+@login_required
 def Home():
     # captures = ImageCapture.query.order_by(ImageCapture.id.desc()).limit(4).all()
-    return render_template('index.html')#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
+    hi = Markup('''{
+                        name:"Admiralty",
+                        value:[103.7948,1.4354,90]
+                    },
+                    {
+                        name:"Sembawang",
+                        value:[103.7948,1.3354,10]
+                    },
+                    {
+                        name:"Woodlands",
+                        value:[103.7948,1.2354,10]
+                    }''')
+    return render_template('index.html',hi=hi)#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
 
 @main.route("/factory/<device_id>", methods=['GET', 'POST']) # Function Decorators provided by Flask -> Takes in our function and serve it when the route is accessed
 @login_required 
