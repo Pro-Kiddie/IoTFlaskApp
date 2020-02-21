@@ -4,7 +4,7 @@ from decimal import Decimal
 from flask import jsonify, Blueprint, Response, redirect, url_for, current_app
 from flask_login import login_required
 from flask_iot_app import s3
-from flask_iot_app.models import AirQuality, Status
+from flask_iot_app.models import AirQuality, Status, AQImage, Device
 # from flask_iot_app.iot.camera_pi import Camera
 # from flask_iot_app import led, buzzer
 
@@ -151,9 +151,19 @@ def buzzerState(device_id = "woodlands", status = "state"):
         new_status.update(actions=[Status.status.set(status.lower())])
     return jsonify({"buzzer_status": status.capitalize()})
 
+@iot.route("/allBuzzer/<status>")
+def toggleAllBuzzers(status = "state"):
+    query = Device.scan()
+    for device in query:
+        hash_key = device.device_id + "_" + "buzzer"
+        new_status = Status(hash_key)
+        new_status.update(actions=[Status.status.set(status.lower())])
+    return jsonify({"buzzer_status": status.capitalize()})
+
+@iot.route("/image")
 @iot.route("/image/<fn>")
 @login_required
-def renderImage(fn): # E.g. fn = deviceid_asdsadqweqwads.jpg
+def renderImage(fn = "test.jpg"): # E.g. fn = deviceid_asdsadqweqwads.jpg
     # Check if the image exists in static/captured_img
     # If not exists download from S3 and render
     img_path = os.path.join(current_app.root_path, "static/captured_img", fn)

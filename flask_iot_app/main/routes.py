@@ -1,5 +1,5 @@
 from datetime import datetime, timezone
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, jsonify
 from flask_login import login_required
 # from flask_iot_app.iot.models import ImageCapture
 from flask_iot_app.models import AQImage
@@ -43,7 +43,18 @@ def Home():
 @login_required 
 def Factory(device_id):
     # captures = ImageCapture.query.order_by(ImageCapture.id.desc()).limit(4).all()
-    return render_template('dashboard.html', device_id = device_id)#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
+    last_5_images = AQImage.query(device_id, scan_index_forward=False, limit=5)
+    image_dict = {}
+    timestamp_dict = {}
+    for image in last_5_images:
+        label_dict = {}
+        for label in image.labels:
+            label_dict[label] = round(image.labels[label], 2)
+        if(not label_dict):
+            label_dict["None"] = 0
+        image_dict[image.fn] = label_dict
+        timestamp_dict[image.fn] = image.timestamp.strftime("%Y-%m-%d %H:%M:%S")
+    return render_template('dashboard.html', device_id = device_id, image_dict = image_dict, timestamp_dict = timestamp_dict)#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
 
 # Door Camera Page
 @main.route("/door_camera")
