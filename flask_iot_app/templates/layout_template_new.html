@@ -70,10 +70,6 @@
                                 <i class="fas fa-tachometer-alt"></i>Dashboard</a>
                         </li>
                         <li>
-                            <a href="{{ url_for('main.door_camera') }}">
-                                <i class="fa fa-camera"></i>Door Camera</a>
-                        </li>
-                        <li>
                             <a href="{{ url_for('users.Account') }}">
                                 <i class="fa fa-user"></i>Account</a>
                         </li>
@@ -83,7 +79,7 @@
                             <ul class="list-unstyled navbar__sub-list js-sub-list">
                                 {% for device_id in get_device_ids() %}
                                     <li>
-                                        <a href="/home/{{ device_id }}">
+                                        <a href="/factory/{{ device_id }}">
                                             <span style="text-transform:capitalize;">{{ device_id }}</span></a>
                                     </li>
                                 {% endfor %}
@@ -118,10 +114,6 @@
                                 <i class="fas fa-tachometer-alt"></i>Dashboard</a>
                         </li>
                         <li>
-                            <a href="{{ url_for('main.door_camera') }}">
-                                <i class="fa fa-camera"></i>Door Camera</a>
-                        </li>
-                        <li>
                             <a href="{{ url_for('users.Account') }}">
                                 <i class="fa fa-user"></i>Account</a>
                         </li>
@@ -132,7 +124,7 @@
                             <ul class="list-unstyled navbar__sub-list js-sub-list">
                                 {% for device_id in get_device_ids() %}
                                     <li>
-                                        <a href="/home/{{ device_id }}">
+                                        <a href="/factory/{{ device_id }}">
                                             <span style="text-transform:capitalize;">{{ device_id }}</span></a>
                                     </li>
                                 {% endfor %}
