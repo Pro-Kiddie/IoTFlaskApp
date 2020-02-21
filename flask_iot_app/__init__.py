@@ -23,9 +23,9 @@ app.config.from_object(Config) # Load config class with all configurations
 # SQLAlchamy Package - Object Relation Mapper (ORM) 
 # Allows programmers to access databases in an object-oriented way
 # Can access to different databases without changing the Python code, just need to change the database URI
-from flask_sqlalchemy import SQLAlchemy
+# from flask_sqlalchemy import SQLAlchemy
 # Create SQLAlchemy database instance for this whole application
-db = SQLAlchemy(app) # The class take in an Flask instance and look for the "SQLALCHMEY_DATABASE_URI" parameter value
+# db = SQLAlchemy(app) # The class take in an Flask instance and look for the "SQLALCHMEY_DATABASE_URI" parameter value
 
 
 # falsk_bcrypt is a wrapper library around the original bcrypt library
@@ -66,9 +66,13 @@ app.json_encoder = CustomEncoder
 
 # Initialize LED object here as certain routes need to import the LED object to perform tasks such as checking its status
 # Other IoT .py files can also import this object
-from gpiozero import LED, Buzzer
-led = LED(16)
-buzzer = Buzzer(5)
+# from gpiozero import LED, Buzzer
+# led = LED(16)
+# buzzer = Buzzer(5)
+
+# AWS resources
+import boto3
+s3 = boto3.resource("s3")
 
 # Run Flask app from a function
 # Advantages: Create different instances of the same app with different configurations

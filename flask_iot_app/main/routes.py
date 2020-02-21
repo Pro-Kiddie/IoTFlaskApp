@@ -1,7 +1,8 @@
 from datetime import datetime, timezone
 from flask import Blueprint, render_template
 from flask_login import login_required
-from flask_iot_app.iot.models import ImageCapture
+# from flask_iot_app.iot.models import ImageCapture
+from flask_iot_app.models import AQImage
 
 # OTHER KNOWNLEDGE
 # If the specific row does not exists in database, returns HTTP code 404 with flask's default page for that code 
@@ -35,12 +36,14 @@ main = Blueprint("main", __name__)
 @main.route("/home") # Function Decorators provided by Flask -> Takes in our function and serve it when the route is accessed
 @login_required 
 def Home():
-    return render_template('index.html') # Must return the page. Flask will render what your this function returns for the URL specified
+    # captures = ImageCapture.query.order_by(ImageCapture.id.desc()).limit(4).all()
+    return render_template('index.html')#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
 
 # Door Camera Page
 @main.route("/door_camera")
 @login_required
 def door_camera():
     # Retrieve the last 4 image captured at door step
-    captures = ImageCapture.query.order_by(ImageCapture.id.desc()).limit(4).all()
-    return render_template("door_camera.html", captures=captures, timezone=timezone)
+    #captures = ImageCapture.query.order_by(ImageCapture.id.desc()).limit(4).all()
+    #return render_template("door_camera.html", captures=captures, timezone=timezone)
+    pass

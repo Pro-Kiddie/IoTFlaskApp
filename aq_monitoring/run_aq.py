@@ -3,7 +3,6 @@ from main_app import MainApp
 if __name__ == "__main__":
     app = MainApp(config_file="device_config.json")
     app.run_pm_sensor()
-    app.run_telegram_bot()
     app.run_motion_sensor()
     try:
         while True: # Keep the main thread running

@@ -7,10 +7,10 @@ from twilio.rest import Client
 
 # No specific permission needed
 def lambda_handler(event, context):
-    twilio_account_sid = "AC2dd284b295baa013a7a9ef0fcaed1ac8"
-    twilio_auth_token = "a2fd7926810abc2e6f4d2152ef3586dc"
-    twilio_my_hp = "+6596509752" # Can retrieve from database the different numbers to send sms
-    twilio_hp = "+12015281484"
+    twilio_account_sid = ""
+    twilio_auth_token = ""
+    twilio_my_hp = "" # Can retrieve from database the different numbers to send sms
+    twilio_hp = ""
     client = Client(twilio_account_sid, twilio_auth_token)
 
     device_id = event["device_id"]

@@ -24,34 +24,41 @@ class CreateAccountForm(FlaskForm):
     # They will be automatically evaluated with the field passed in
     # Check documentation
     def validate_email(self, email):
-        user = User.query.filter_by(email=email.data).first()
+        user = None
+        try:
+            user = User.get(email.data)
+        except User.DoesNotExist:
+            pass
         # user will be none if no user with same email exists
         if user:
             raise ValidationError("That email has already been registered. Please choose a different one.")
 
-    def validate_name(self, name):
-        user = User.query.filter_by(name=name.data).first()
-        # user will be none if no user with same email exists
-        if user:
-            raise ValidationError("That name has already been registered. Please choose a different one.")
+    # def validate_name(self, name):
+    #     user = User.query.filter_by(name=name.data).first()
+    #     if user:
+    #         raise ValidationError("That name has already been registered. Please choose a different one.")
 
 class UpdateAccountForm(FlaskForm):
-    email = StringField('Email', validators=[DataRequired(), Email()]) # 'Email' is the label for the form that will appear in HTML
+    #email = StringField('Email', validators=[DataRequired(), Email()]) # 'Email' is the label for the form that will appear in HTML
     name = StringField("Name", validators=[DataRequired(), Length(min=1, max=30)])
     picture = FileField("Update Profile Picutre", validators=[FileAllowed(["jpg", "png", "jpeg"])])
     submit = SubmitField("Update")
 
-    def validate_email(self, email):
-        if current_user.email != email.data:
-            user = User.query.filter_by(email=email.data).first()
-            if user:
-                raise ValidationError("That email has already been registered. Please choose a different one.")
+    # def validate_email(self, email):
+    #     if current_user.email != email.data: # Only validates email when user updates email. User can only update name or profile picture 
+    #         user = None
+    #         try:
+    #             user = User.get(email.data)
+    #         except User.DoesNotExist:
+    #             pass
+    #         if user:
+    #             raise ValidationError("That email has already been registered. Please choose a different one.")
 
-    def validate_name(self, name):
-        if current_user.name != name.data:
-            user = User.query.filter_by(name=name.data).first()
-            if user:
-                raise ValidationError("That name has already been registered. Please choose a different one.")
+    # def validate_name(self, name):
+    #     if current_user.name != name.data:
+    #         user = User.query.filter_by(name=name.data).first()
+    #         if user:
+    #             raise ValidationError("That name has already been registered. Please choose a different one.")
 
 
 class RequestResetForm(FlaskForm): 
@@ -59,9 +66,13 @@ class RequestResetForm(FlaskForm):
     submit = SubmitField("Request Password Reset")
 
     def validate_email(self, email):
-        user = User.query.filter_by(email=email.data).first()
+        user = None
+        try:
+            user = User.get(email.data)
+        except User.DoesNotExist:
+            pass
         if user is None:
-            raise ValidationError("That account has not been created yet. Please create an account first.")        
+            raise ValidationError("That account has not been created yet. Please create an account first.")      
 
 class ResetPasswordForm(FlaskForm):
     password = PasswordField("Password", validators=[DataRequired(), Length(min=8, max=50)]) # Can create custom regular expression for validator

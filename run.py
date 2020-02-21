@@ -1,5 +1,5 @@
 import argparse, os, json
-from flask_iot_app import app, db, bcrypt
+from flask_iot_app import app, bcrypt#, db
 from flask_iot_app.models import User
 
 parser = argparse.ArgumentParser(description="Flask Web Server of this IoT Application")
@@ -11,17 +11,17 @@ args = parser.parse_args()
 #from flask_iot_app import create_app
 
 # Create database tables if not exists
-db.create_all()
+# db.create_all()
 
 # Create initial admin account as only login page is accessible without login
 # Only existing user can create account for other family members
-with open("config.json", "r") as config_file:
-    config = json.load(config_file)
-    email = config.get("admin_email")
-    if not User.query.filter_by(email=email).first(): # Create admin user if does not exists
-        password_hash = bcrypt.generate_password_hash(config.get("admin_password")).decode("utf-8")
-        db.session.add(User(name=config.get("admin_name"), email=email, password=password_hash))
-        db.session.commit()
+# with open("config.json", "r") as config_file:
+#     config = json.load(config_file)
+#     email = config.get("admin_email")
+#     if not User.query.filter_by(email=email).first(): # Create admin user if does not exists
+#         password_hash = bcrypt.generate_password_hash(config.get("admin_password")).decode("utf-8")
+#         db.session.add(User(name=config.get("admin_name"), email=email, password=password_hash))
+#         db.session.commit()
 
 #app = create_app()
 

@@ -16,21 +16,6 @@
                  <legend class="border-bottom mb-4">Account Info</legend>
                  <div class="form-group">
                      <!-- from the form object we passed in, get the email field's label and create the necessary html tag with class specified-->
-                     {{ form.email.label(class="form-control-label") }} 
-                     {% if form.email.errors %} <!-- if error in forms, display them-->
-                        {{ form.email(class="form-control form-control-lg is-invalid")}} <!-- "is-invalid" bootstrap class to highlight input field in red-->
-                        {% for error in form.email.errors %}
-                            <div class="invalid-feedback">
-                                <span>{{ error }}</span> 
-                            </div>
-                        {% endfor %}
-                     {% else %}
-                     <!-- Actual <input> field will be generated here -->
-                        {{ form.email(class="form-control form-control-lg")}} <!-- else display the input field normally-->
-                     {% endif %}
-                 </div>
-                 <div class="form-group">
-                     <!-- from the form object we passed in, get the email field's label and create the necessary html tag with class specified-->
                      {{ form.name.label(class="form-control-label") }} 
                         {% if form.name.errors %} <!-- if error in forms, display them-->
                             {{ form.name(class="form-control form-control-lg is-invalid")}} <!-- "is-invalid" bootstrap class to highlight input field in red-->

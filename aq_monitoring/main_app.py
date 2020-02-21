@@ -1,5 +1,4 @@
-import threading, serial, json, boto3, re, telepot, sys, base64
-from models import Device
+import threading, serial, json, boto3, re, telepot, sys, base64, random
 from rpi_lcd import LCD
 from gpiozero import LED, Buzzer, MotionSensor
 from twilio.rest import Client
@@ -23,8 +22,8 @@ class MainApp():
     mqtt_client = None
 
     # Global variables for PM Sensor
-    pm25 = 0
-    pm10 = 0
+    pm_25 = 0
+    pm_10 = 0
     pm25Threshold = None
     pm10Threshold = None
     #pm_lock = threading.Lock(j) # Not really needed. https://stackoverflow.com/questions/3714613/python-safe-to-read-values-from-an-object-in-a-thread
@@ -54,7 +53,7 @@ class MainApp():
         # Initialization of Global variables
         MainApp.device_id = MainApp.config["device_id"]
 
-        MainApp.mqtt_client = AWSIoTMQTTClient("PubSub-1726992")
+        MainApp.mqtt_client = AWSIoTMQTTClient(MainApp.config["mqtt_client_name"])
         MainApp.mqtt_client.configureEndpoint(MainApp.config["aws_host"], 8883)
         MainApp.mqtt_client.configureCredentials(MainApp.config["aws_root_ca"], MainApp.config["aws_private_key"], MainApp.config["aws_certificate"])
         MainApp.mqtt_client.configureOfflinePublishQueueing(-1)  # Infinite offline Publish queueing
@@ -101,6 +100,11 @@ class MainApp():
                 # Parse the PM2.5 and PM10 data
                 MainApp.pm_25 = (int.from_bytes(data[3], byteorder="little") * 256 + int.from_bytes(data[2], byteorder="little")) / 10 # pm_25 = int.from_bytes(b"".join(data[2:4]), byteorder="little") / 10
                 MainApp.pm_10 = int.from_bytes(b"".join(data[4:6]), byteorder="little") / 10
+
+                # If no SDS101 pm sensor available, use random generated data as pseudo device
+                # Comment out line 85, 94-102 & Uncomment out the two lines below
+                # MainApp.pm_25 = round(random.uniform(5, 300), 1)
+                # MainApp.pm_10 = round(random.uniform(5, 400), 1)
 
                 now = datetime.now()
                 now_str = now.strftime("%Y-%m-%d %H:%M:%S")
@@ -212,7 +216,7 @@ class MainApp():
         now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         try:
             payload = json.loads(message.payload)
-            comp = payload["comp"] # pm25Threshold, pm10Threshold, buzzer
+            comp = payload["comp"] # pm25Threshold, pm10Threshold, buzzer, camera
             status = payload["status"]  # Taking the status stored on db as the true status as web app can only modify the status in db
             if comp == "pm25Threshold":
                 MainApp.pm25Threshold = float(status)
@@ -231,83 +235,30 @@ class MainApp():
                         MainApp.buzzer.off()
                         MainApp.buzzer_status = status
                         print("Update Status Thread\t\t {}\t Turned Off Buzzer.".format(now_str))
+            elif comp == "camera":
+                t = threading.Thread(target=self._take_photo, name="take_photo", daemon=True)
+                t.start()
+                print("Update Status Thread\t\t {}\t Taking a Photo and Sending via Telegram.".format(now_str))
         except Exception as e:
             print(e)
             print("Update Status Thread - Exception. Failed to update {} status.".format(comp))
 
-    def _telegram_respond(self, msg):
-        telegram_chat_id = msg["chat"]["id"]
-        command = msg["text"]
-        now_str = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        print("Telegram Bot Thread \t\t {}\t Received command: {}".format(now_str, command))
-
+    def _take_photo(self):
         try:
-            if re.compile(r"\bon ?(all|%s) ?(sound|buzzer|warning)\b" % MainApp.device_id, re.IGNORECASE).search(command) != None:
-                with MainApp.buzzer_lock: # Lock ensures if update_status thread is changing the buzzer state, this thread will get the latest buzzer status 
-                    if MainApp.buzzer_status != "on":
-                        MainApp.buzzer.on()
-                        MainApp.buzzer_status = "on"
-                        payload = {"device_comp" : "{}_{}".format(MainApp.device_id, "buzzer"),
-                                    "status" : "on"}
-                        MainApp.mqtt_client.publish("status/{}".format(MainApp.device_id), json.dumps(payload), 1)
-                MainApp.telegram_bot.sendMessage(telegram_chat_id, "Device ID: {}\nUnhealthy Air Quality Warning Sound Has Been Turned On!".format(MainApp.device_id))
-                print("Telegram Bot Thread \t\t {}\t Turned on Buzzer.".format(now_str))
-
-            elif re.compile(r"\boff ?(all|%s) ?(sound|buzzer|warning)\b" % MainApp.device_id, re.IGNORECASE).search(command) != None:
-                with MainApp.buzzer_lock:
-                    if MainApp.buzzer_status != "off":
-                        MainApp.buzzer.off()
-                        MainApp.buzzer_status = "off"
-                        payload = {"device_comp" : "{}_{}".format(MainApp.device_id, "buzzer"),
-                                    "status" : "off"}
-                        MainApp.mqtt_client.publish("status/{}".format(MainApp.device_id), json.dumps(payload), 1)
-                MainApp.telegram_bot.sendMessage(telegram_chat_id, "Device ID: {}\nUnhealthy Air Quality Warning Sound Has Been Turned Off!".format(MainApp.device_id))
-                print("Telegram Bot Thread \t\t {}\t Turned off Buzzer.".format(now_str))
-
-            elif re.compile(r"\bget ?(all|%s) ?((aq)|(air quality))\b" % MainApp.device_id, re.IGNORECASE).search(command) != None:
-                reply = "Device ID: {}\nCurrent Air Quality:\nPM 2.5: {:.1f}\nPM 10: {:.1f}".format(MainApp.device_id, MainApp.pm_25, MainApp.pm_10)
-                MainApp.telegram_bot.sendMessage(telegram_chat_id, reply)
-                print("Telegram Bot Thread \t\t {}\t Retrieved Air Quality.".format(now_str))
-
-            elif re.compile(r"\b(all|%s) ?take ?(photo|image|img|pic(ture)?)\b" % MainApp.device_id, re.IGNORECASE).search(command) != None:
-                try:
-                    MainApp.camera_lock.acquire()
-                    camera = PiCamera(resolution=(1280,720))
-                    sleep(2)
-                    with BytesIO() as pic_stream:
-                        camera.capture(pic_stream, "jpeg")
-                        pic_stream.seek(0)
-                        MainApp.telegram_bot.sendPhoto(MainApp.telegram_chat_id, pic_stream, caption="Device ID: {}\nFactory Photo Taken.".format(MainApp.device_id))
-                    print("Telegram Bot Thread \t\t {}\t Photo Taken and Send to User.".format(now_str))
-                except Exception as e:
-                    print(e)
-                finally:
-                    if camera != None:
-                        camera.close()
-                    MainApp.camera_lock.release()
-            else:
-                print("Telegram Bot Thread \t\t {}\t Unknown Command.".format(now_str))
-
-            # The bot running on each device should not respond to the two requests below
-            # They should be only replied once -> a bot running with the web app
-#             elif re.compile(r"get (id|device)s", re.IGNORECASE).search(command) != None:
-#                 reply = "All Device IDs:\n"
-#                 for device in Device.scan():
-#                     reply += (device.device_id + "\n")
-#                 MainApp.telegram_bot.sendMessage(telegram_chat_id, reply)
-#                 print("Telegram Bot Thread \t\t {}\t Retrieved All Device IDs.".format(now_str))
-
-#             else:
-#                 reply = '''Sorry! Invalid Command.\n
-# "get devices" - Get all the device IDs.
-# "get <all | device_id> AQ" - Get real-time PM2.5 and PM10 reading from all devices or the device with device ID specified.
-# "on <all | device_id> buzzer" - Play the warning sound for factories monitored. 
-# "off <all | device_id> buzzer" - Stop the warning sound.'''
-#                 MainApp.telegram_bot.sendMessage(telegram_chat_id, reply)
+            MainApp.camera_lock.acquire()
+            camera = PiCamera(resolution=(1280,720))
+            sleep(2)
+            with BytesIO() as pic_stream:
+                camera.capture(pic_stream, "jpeg")
+                pic_stream.seek(0)
+                MainApp.telegram_bot.sendPhoto(MainApp.telegram_chat_id, pic_stream, caption="Device ID: {}\nFactory Photo Taken.".format(MainApp.device_id))
         except Exception as e:
             print(e)
-            print("Telegram Bot Thread - Exception. Recovering ...")
-
+        finally:
+            if camera != None:
+                camera.close()
+            MainApp.camera_lock.release()
+    
     def _motion_sensor(self):
         motionsensor = MotionSensor(13, sample_rate=6, queue_len=1)
         while True:
@@ -337,10 +288,6 @@ class MainApp():
         t = threading.Thread(target=self._pm_sensor, name="pm_sensor", daemon=True)# Launch as daemon thread which will end automatically when main thread ends and does not block main thread
         MainApp.iot_threads.append(t)
         t.start()
-
-    def run_telegram_bot(self):
-        _ = MessageLoop(MainApp.telegram_bot, self._telegram_respond).run_as_thread()
-        # print(_ == None) -> True
 
     def run_motion_sensor(self):
         t = threading.Thread(target=self._motion_sensor, name="motion_sensor", daemon=True)
