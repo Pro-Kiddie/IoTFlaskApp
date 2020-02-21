@@ -165,7 +165,7 @@
 {% block javascript %}
 
 <script type="text/javascript">
-    var aqURL = "{{ url_for('iot.GetAQ',timeframe=0) }}"
+    var aqURL = "{{ url_for('iot.GetAQ') }}"
 
     function changeTF(num){
         if(num==1){

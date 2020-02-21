@@ -69,7 +69,7 @@
                         <i class="fa fa-volume-up" style="font-size: 45px;"></i>
                     </div>
                     <div class="text">
-                        <h2 style="font-size:20px;">{{ device_id }}</h2>
+                        <h2 style="font-size:20px;"><span style="text-transform:capitalize;">{{ device_id }}</span></h2>
                         <h2>Sound</h2>
                     </div>
                 </div>
@@ -165,19 +165,19 @@
 {% block javascript %}
 
 <script type="text/javascript">
-    var aqURL = "{{ url_for('iot.GetAQ',timeframe=0) }}"
+    var aqURL = "{{ url_for('iot.GetAQ', device_id = device_id) }}"
 
     function changeTF(num){
         if(num==1){
-            aqURL = "{{ url_for('iot.GetAQ',timeframe=1) }}"
+            aqURL = "{{ url_for('iot.GetAQ', device_id = device_id, timeframe=1) }}"
         }
         else if(num==2){
-            aqURL = "{{ url_for('iot.GetAQ',timeframe=2) }}"
+            aqURL = "{{ url_for('iot.GetAQ', device_id = device_id, timeframe=2) }}"
         }
         else if(num==3){
-            aqURL = "{{ url_for('iot.GetAQ',timeframe=3) }}"
+            aqURL = "{{ url_for('iot.GetAQ', device_id = device_id, timeframe=3) }}"
         } else{
-            aqURL = "{{ url_for('iot.GetAQ',timeframe=0) }}"
+            aqURL = "{{ url_for('iot.GetAQ', device_id = device_id, timeframe=0) }}"
         }
         $.get(aqURL, function (data) {
             pm25Chart.setOption({
@@ -218,14 +218,14 @@
     var buzzer_btn = document.getElementById("buzzer_btn")
     
     window.onload = function(){
-        $.get("{{ url_for('iot.getAvgAQ') }}", function (data){
+        $.get("{{ url_for('iot.getAvgAQ', device_id = device_id) }}", function (data){
             avgpm25_card.innerHTML = data.avg_25;
             avgpm10_card.innerHTML = data.avg_10;
         })
-        $.get("{{ url_for('iot.getLEDStatus') }}", function (data){
+        $.get("{{ url_for('iot.getLEDStatus', device_id = device_id) }}", function (data){
             led_status.innerHTML = data.LED_status;
         })
-        $.get("{{ url_for('iot.buzzerState', status='State') }}", function (data){
+        $.get("{{ url_for('iot.buzzerState', device_id = device_id, status='State') }}", function (data){
             if (data.buzzer_status === "On") buzzer_btn.checked = true;
             else buzzer_btn.checked = false;
         })
@@ -447,24 +447,24 @@
             });
         })
 
-        $.get("{{ url_for('iot.getAvgAQ') }}", function (data){
+        $.get("{{ url_for('iot.getAvgAQ', device_id = device_id) }}", function (data){
             avgpm25_card.innerHTML = data.avg_25;
             avgpm10_card.innerHTML = data.avg_10;
         })
 
-        $.get("{{ url_for('iot.getLEDStatus') }}", function (data){
+        $.get("{{ url_for('iot.getLEDStatus', device_id = device_id) }}", function (data){
             led_status.innerHTML = data.LED_status;
         })
 
-         $.get("{{ url_for('iot.buzzerState', status='State') }}", function (data){
+         $.get("{{ url_for('iot.buzzerState', device_id = device_id, status='State') }}", function (data){
             if (data.buzzer_status === "On") buzzer_btn.checked = true;
             else buzzer_btn.checked = false;
         })
     }, 60000);
 
     function toggle_buzzer(){
-        if (buzzer_btn.checked == true) $.get("{{ url_for('iot.buzzerState', status='On') }}");
-        else if (buzzer_btn.checked == false) $.get("{{ url_for('iot.buzzerState', status='Off') }}");
+        if (buzzer_btn.checked == true) $.get("{{ url_for('iot.buzzerState', device_id = device_id, status='On') }}");
+        else if (buzzer_btn.checked == false) $.get("{{ url_for('iot.buzzerState', device_id = device_id, status='Off') }}");
     }
 
 </script>

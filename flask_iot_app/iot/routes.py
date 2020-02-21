@@ -8,9 +8,11 @@ from flask_iot_app.models import AirQuality, Status
 
 iot = Blueprint("iot", __name__)
 
-@iot.route("/getAQ/<timeframe>")
+@iot.route("/getAQ")
+@iot.route("/getAQ/<device_id>")
+@iot.route("/getAQ/<device_id>/<timeframe>")
 @login_required
-def GetAQ(timeframe):
+def GetAQ(device_id = "woodlands", timeframe = 0):
     m = 0
     timeframe = int(timeframe)
     if(timeframe == 0):
@@ -25,7 +27,6 @@ def GetAQ(timeframe):
     # last_rec = AirQuality.query.order_by(AirQuality.id.desc()).first()
     # sixty_min_ago = last_rec.timestamp - timedelta(minutes=120)
     # data = AirQuality.query.filter(AirQuality.timestamp > sixty_min_ago).all()
-    device_id = "woodlands"
     last_rec = AirQuality.query(device_id, scan_index_forward=False, limit=1).next()
     earlier_rec = last_rec.timestamp - timedelta(minutes=120)
     data = AirQuality.query(device_id, AirQuality.timestamp > earlier_rec, scan_index_forward=True)
@@ -104,13 +105,13 @@ def GetAQ(timeframe):
     return jsonify(result)
 
 @iot.route("/getAvgAQ")
+@iot.route("/getAvgAQ/<device_id>")
 @login_required
-def getAvgAQ():
+def getAvgAQ(device_id = "woodlands"):
     # Get average PM 2.5 & PM 10 for the past hour for now; can be expanded
     # last_rec = AirQuality.query.order_by(AirQuality.id.desc()).first()
     # sixty_min_ago = last_rec.timestamp - timedelta(minutes=60)
     # data = AirQuality.query.filter(AirQuality.timestamp > sixty_min_ago).all()
-    device_id = "woodlands"
     last_rec = AirQuality.query(device_id, scan_index_forward=False, limit=1).next()
     earlier_rec = last_rec.timestamp - timedelta(minutes=60)
     data = AirQuality.query(device_id, AirQuality.timestamp > earlier_rec, scan_index_forward=False)
@@ -124,9 +125,9 @@ def getAvgAQ():
     return jsonify({"avg_25": Decimal(avg_25), "avg_10" : Decimal(avg_10)})
 
 @iot.route("/getLEDStatus")
+@iot.route("/getLEDStatus/<device_id>")
 @login_required
-def getLEDStatus():
-    device_id = "woodlands"
+def getLEDStatus(device_id = "woodlands"):
     result = dict()
     # if led.is_lit:
     #     result['LED_status'] = "On"
@@ -136,11 +137,10 @@ def getLEDStatus():
     result["LED_status"] = status.capitalize()
     return jsonify(result)
 
-
 @iot.route("/buzzerState/<status>")
+@iot.route("/buzzerState/<device_id>/<status>")
 @login_required
-def buzzerState(status):
-    device_id = "woodlands"
+def buzzerState(device_id = "woodlands", status = "state"):
     if status == "State":
         status = Status.get("{}_{}".format(device_id, "buzzer")).status
     elif status == "On" or status == "Off":
