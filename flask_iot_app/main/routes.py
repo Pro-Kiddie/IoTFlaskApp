@@ -1,8 +1,9 @@
 from datetime import datetime, timezone
-from flask import Blueprint, render_template
+from flask import Blueprint, render_template, flash
 from flask_login import login_required
 # from flask_iot_app.iot.models import ImageCapture
-from flask_iot_app.models import AQImage
+from flask_iot_app.models import AQImage, Status
+from flask_iot_app.iot.forms import UpdateThresholdForm
 
 # OTHER KNOWNLEDGE
 # If the specific row does not exists in database, returns HTTP code 404 with flask's default page for that code 
@@ -39,11 +40,18 @@ def Home():
     # captures = ImageCapture.query.order_by(ImageCapture.id.desc()).limit(4).all()
     return render_template('index.html')#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
 
-@main.route("/factory/<device_id>") # Function Decorators provided by Flask -> Takes in our function and serve it when the route is accessed
+@main.route("/factory/<device_id>", methods=['GET', 'POST']) # Function Decorators provided by Flask -> Takes in our function and serve it when the route is accessed
 @login_required 
 def Factory(device_id):
     # captures = ImageCapture.query.order_by(ImageCapture.id.desc()).limit(4).all()
-    return render_template('dashboard.html', device_id = device_id)#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
+    form = UpdateThresholdForm(device_id=device_id)
+    if form.validate_on_submit():
+        new_pm25 = Status(form.device_id.data + "_pm25Threshold")
+        new_pm10 = Status(form.device_id.data + "_pm10Threshold")
+        new_pm25.update(actions=[Status.status.set(str(round(float(form.pm_25.data), 1)))])
+        new_pm10.update(actions=[Status.status.set(str(round(float(form.pm_10.data), 1)))])
+        flash("PM 2.5 and PM 10 thresholds updated.", "success")
+    return render_template('dashboard.html', device_id=device_id, form=form)#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
 
 # Door Camera Page
 @main.route("/door_camera")

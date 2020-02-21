@@ -4,14 +4,14 @@ from pynamodb.exceptions import PutError
 from botocore.client import ClientError
 
 # Read Config file
-with open("config.json", "r") as config_file:
+with open("config_mine.json", "r") as config_file:
     config = json.load(config_file)
 
     # Setup dynamo db for the device
-    for device_id in config.get("all_device_ids"):
+    for device_id, coords in config.get("all_device_ids").items():
         try:
             # Register itself under Device table
-            device = Device(device_id)
+            device = Device(device_id, geo_coord=coords)
             device.save(~Device.device_id.exists())
             print("Registered under Device Table.")
             # Populate components' status in Status table

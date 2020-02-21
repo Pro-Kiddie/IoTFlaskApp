@@ -1,6 +1,6 @@
 # sudo python3 -m pip install pynamodb
 from pynamodb.models import Model
-from pynamodb.attributes import UnicodeAttribute, NumberAttribute, UTCDateTimeAttribute, UnicodeSetAttribute, NumberSetAttribute, MapAttribute
+from pynamodb.attributes import UnicodeAttribute, NumberAttribute, UTCDateTimeAttribute, UnicodeSetAttribute, NumberSetAttribute, MapAttribute, ListAttribute
 from datetime import datetime#, timedelta
 from flask_login import UserMixin
 # from flask_iot_app import loginManager
@@ -27,6 +27,7 @@ class Device(Model):
         table_name = "Device"
     
     device_id = UnicodeAttribute(hash_key=True)
+    geo_coord = ListAttribute()
 
 class AQImage(Model):
     class Meta:

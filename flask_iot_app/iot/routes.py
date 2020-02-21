@@ -4,7 +4,7 @@ from decimal import Decimal
 from flask import jsonify, Blueprint, Response, redirect, url_for, current_app
 from flask_login import login_required
 from flask_iot_app import s3
-from flask_iot_app.models import AirQuality, Status
+from flask_iot_app.models import AirQuality, Status, Device
 # from flask_iot_app.iot.camera_pi import Camera
 # from flask_iot_app import led, buzzer
 
@@ -171,6 +171,21 @@ def renderImage(fn): # E.g. fn = deviceid_asdsadqweqwads.jpg
             img_on_s3.download_file(img_path)
     return redirect(url_for('static', filename='captured_img/' + fn))
 
+@iot.route("/getAQMap")
+@login_required
+def getAQMap(): 
+    result = []
+    # Retrieve all the devices with their coordinates
+    # For device, for mulate the result in such format: [{name: "woodlands", value : [cord1, cord2, "PM2.5 PM10"]}, {obj2} ...]
+    devices = Device.scan()
+    for device in devices:
+        record = {'name' : device.device_id.capitalize(), 'value' : device.geo_coord}
+        latest_reading = AirQuality.query(device.device_id, scan_index_forward=False, limit=1).next()
+        record['value'].append(latest_reading.pm_25)
+        record['value'].append(latest_reading.pm_10)
+        record['value'].append("PM2.5:" + str(latest_reading.pm_25) + " PM10:" + str(latest_reading.pm_10))
+        result.append(record)
+    return jsonify(result)
 
 # def gen(camera):
 #     """Video streaming generator function."""
