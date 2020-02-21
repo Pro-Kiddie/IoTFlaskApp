@@ -27,3 +27,6 @@ class Config:
     MAIL_USE_TLS = True
     MAIL_USERNAME = config.get("MAIL_USERNAME") #os.environ.get("EMAIL_USER") # Should setup the environment variables before running the app
     MAIL_PASSWORD = config.get("MAIL_PASSWORD") #os.environ.get("EMAIL_PASS") # Can be done in run.py? Configure its permissions properly
+
+    # AWS resources
+    AWS_S3_BUCKET = config.get("aws_s3_bucket")
