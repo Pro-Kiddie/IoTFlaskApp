@@ -39,6 +39,12 @@ def Home():
     # captures = ImageCapture.query.order_by(ImageCapture.id.desc()).limit(4).all()
     return render_template('index.html')#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
 
+@main.route("/home/<device_id>") # Function Decorators provided by Flask -> Takes in our function and serve it when the route is accessed
+@login_required 
+def Home(device_id):
+    # captures = ImageCapture.query.order_by(ImageCapture.id.desc()).limit(4).all()
+    return render_template('dashboard.html', device_id = device_id)#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
+
 # Door Camera Page
 @main.route("/door_camera")
 @login_required

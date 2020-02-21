@@ -95,11 +95,23 @@ from flask_iot_app.users.routes import users
 from flask_iot_app.main.routes import main
 from flask_iot_app.iot.routes import iot
 from flask_iot_app.errors.handlers import errors
+from flask_iot_app.models import Device
 
 app.register_blueprint(users)
 app.register_blueprint(main)
 app.register_blueprint(iot)
 app.register_blueprint(errors)
+
+#Global Context Processor to retrieve Device IDs
+@app.context_processor
+def utility_processor():
+    def get_device_ids():
+        device_ids = []
+        query = Device.scan()
+        for device in query:
+            device_ids.append(device.device_id)
+        return device_ids
+    return dict(get_device_ids = get_device_ids)
 
 #    return app
 

@@ -77,6 +77,18 @@
                             <a href="{{ url_for('users.Account') }}">
                                 <i class="fa fa-user"></i>Account</a>
                         </li>
+                        <li class="has-sub">
+                            <a class="js-arrow" href="#">
+                                <i class="fas fa-industry"></i>Factories</a>
+                            <ul class="list-unstyled navbar__sub-list js-sub-list">
+                                {% for device_id in get_device_ids() %}
+                                    <li>
+                                        <a href="/home/{{ device_id }}">
+                                            <span style="text-transform:capitalize;">{{ device_id }}</span></a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
                         <li>
                             <a href="{{ url_for('users.Create_Account') }}">
                                 <i class="fas fa-plus"></i>Create Account</a>
@@ -113,6 +125,20 @@
                             <a href="{{ url_for('users.Account') }}">
                                 <i class="fa fa-user"></i>Account</a>
                         </li>
+
+                        <li class="has-sub">
+                            <a class="js-arrow" href="#">
+                                <i class="fas fa-industry"></i>Factories</a>
+                            <ul class="list-unstyled navbar__sub-list js-sub-list">
+                                {% for device_id in get_device_ids() %}
+                                    <li>
+                                        <a href="/home/{{ device_id }}">
+                                            <span style="text-transform:capitalize;">{{ device_id }}</span></a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </li>
+                        
                         <li>
                             <a href="{{ url_for('users.Create_Account') }}">
                                 <i class="fas fa-plus"></i>Create Account</a>
