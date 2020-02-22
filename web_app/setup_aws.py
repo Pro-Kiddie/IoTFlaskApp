@@ -1,4 +1,4 @@
-from models import AQImage, AirQuality, Status, Device, User
+from flask_iot_app.models import AQImage, AirQuality, Status, Device, User
 import boto3, botocore, json, bcrypt, pynamodb
 
 # Setup AWS - Needs to have .credentials setup
