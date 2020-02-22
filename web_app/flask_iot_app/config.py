@@ -29,4 +29,9 @@ class Config:
     MAIL_PASSWORD = config.get("MAIL_PASSWORD") #os.environ.get("EMAIL_PASS") # Can be done in run.py? Configure its permissions properly
 
     # AWS resources
+    AWS_HOST = config.get("aws_host")
+    AWS_ROOT_CA = config.get("aws_root_ca")
+    AWS_CERTIFICATE = config.get("aws_certificate")
+    AWS_PRIVATE_KEY = config.get("aws_private_key")
     AWS_S3_BUCKET = config.get("aws_s3_bucket")
+    MQTT_CLIENT_NAME = config.get("mqtt_client_name")

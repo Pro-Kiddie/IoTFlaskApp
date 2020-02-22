@@ -197,7 +197,7 @@ class MainApp():
 
                         except Exception as e:
                             print(e)
-                            print("Failed to perform Unhealthy Alerat opeartions. Retry in an hour.")
+                            print("Failed to perform Unhealthy Alert opeartions. Retry in an hour.")
                         finally:
                             # Add 1 hour to next_alert_time, so will only perform Alert opeartions hourly
                             next_alert_time += timedelta(hours=1)
