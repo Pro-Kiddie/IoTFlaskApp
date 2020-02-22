@@ -9,3 +9,4 @@ function.zip
 *.key
 flask_iot_app/config.py
 flask_iot_app/config.py
+web_app/REST API Key.txt

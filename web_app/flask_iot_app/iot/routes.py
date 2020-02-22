@@ -214,7 +214,7 @@ def getAQMap():
     for device in devices:
         record = {'name' : device.device_id.capitalize(), 'value' : device.geo_coord}
         latest_reading = AirQuality.query(device.device_id, scan_index_forward=False, limit=1).next()
-        record['value'].append(latest_reading.pm_25+latest_reading.pm_10)
+        record['value'].append(latest_reading.pm_25)
         result.append(record)
     return jsonify(result)
 
