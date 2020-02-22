@@ -1,7 +1,7 @@
 import json
 from flask_iot_app import app
 
-with open(app.root_path + "/../config.json", "r") as config_file:
+with open(app.root_path + "/../config_mine.json", "r") as config_file:
     config = json.load(config_file)
 
 # Store all the flask app configurations in a class

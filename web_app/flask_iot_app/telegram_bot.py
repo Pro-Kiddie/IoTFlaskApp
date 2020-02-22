@@ -1,6 +1,6 @@
 import telepot, json, re
 from datetime import datetime
-from models import Device, AirQuality, Status
+from flask_iot_app.models import Device, AirQuality, Status
 from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 from telepot.loop import MessageLoop
 from time import sleep

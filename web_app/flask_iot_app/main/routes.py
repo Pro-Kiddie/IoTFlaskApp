@@ -40,15 +40,15 @@ def Home():
     # captures = ImageCapture.query.order_by(ImageCapture.id.desc()).limit(4).all()
     hi = Markup('''{
                         name:"Admiralty",
-                        value:[103.7948,1.4354,90]
+                        value:[103.7948,1.4954,90]
                     },
                     {
                         name:"Sembawang",
-                        value:[103.7948,1.3354,10]
+                        value:[103.7948,1.4554,10]
                     },
                     {
                         name:"Woodlands",
-                        value:[103.7948,1.2354,10]
+                        value:[103.7948,1.4154,10]
                     }''')
     return render_template('index.html',hi=hi)#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
 
@@ -84,10 +84,10 @@ def Factory(device_id):
     return render_template('dashboard.html', device_id=device_id, image_dict=image_dict, timestamp_dict=timestamp_dict, pm25Threshold=pm25Threshold, pm10Threshold=pm10Threshold, form=form)#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
 
 # Door Camera Page
-@main.route("/door_camera")
-@login_required
-def door_camera():
+# @main.route("/door_camera")
+# @login_required
+# def door_camera():
     # Retrieve the last 4 image captured at door step
     #captures = ImageCapture.query.order_by(ImageCapture.id.desc()).limit(4).all()
     #return render_template("door_camera.html", captures=captures, timezone=timezone)
-    pass
+    # pass
