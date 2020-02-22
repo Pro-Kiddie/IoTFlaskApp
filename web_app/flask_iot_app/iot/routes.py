@@ -151,6 +151,7 @@ def buzzerState(device_id = "woodlands", status = "state"):
         hash_key = device_id + "_" + "buzzer"
         new_status = Status(hash_key)
         new_status.update(actions=[Status.status.set(status.lower())])
+        #sleep(1)
     return jsonify({"buzzer_status": status.capitalize()})
 
 @iot.route("/allBuzzer/<status>")
@@ -161,6 +162,7 @@ def toggleAllBuzzers(status = "state"):
         hash_key = device.device_id + "_" + "buzzer"
         new_status = Status(hash_key)
         new_status.update(actions=[Status.status.set(status.lower())])
+        #sleep(1)
     return jsonify({"buzzer_status": status.capitalize()})
 
 @iot.route("/allTakePhoto")

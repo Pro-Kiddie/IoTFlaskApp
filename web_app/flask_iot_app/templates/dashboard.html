@@ -552,7 +552,7 @@
             if (data.buzzer_status === "On") buzzer_btn.checked = true;
             else buzzer_btn.checked = false;
         })
-    }, 60000);
+    }, 10000);
 
     function toggle_buzzer(){
         if (buzzer_btn.checked == true) $.get("{{ url_for('iot.buzzerState', device_id = device_id, status='On') }}");
