@@ -4,3 +4,6 @@ setup_flask_env.bat
 **/env/
 *_mine.json
 function.zip
+*.pem
+*.crt
+*.key

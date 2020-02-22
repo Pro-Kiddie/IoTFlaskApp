@@ -49,6 +49,12 @@ loginManager = LoginManager(app)
 loginManager.login_view = 'users.Login' # for all routes that require login, if not login, will be redirected to "users.Login" view ("Login is the function name of that displays login page")
 loginManager.login_message_category = 'info' # bootstrap info class
 
+# loginManager.refresh_view = 'users.Login'
+# loginManager.needs_refresh_message = (u"Session timeout. Please relogin.")
+# loginManager.needs_refresh_message_category = 'warning'
+# Flask sessions expire once you close the browser unless you have a permanent session set. Do not close browser, do not expire.
+# app.permanent_session_lifetime = timedelta(minutes=5)
+
 
 # https://pythonhosted.org/Flask-Mail/
 # Library to send emails with the server, account you set

@@ -1,10 +1,11 @@
-import argparse, os, json
-from flask_iot_app import app, bcrypt#, db
-from flask_iot_app.models import User
+import argparse
+from flask_iot_app import app
+from flask_iot_app.telegram_bot import TelegramBot
 
-parser = argparse.ArgumentParser(description="Flask Web Server of this IoT Application")
+parser = argparse.ArgumentParser(description="Flask Web Server of this Air Quality IoT Application")
 parser.add_argument("-d", "--debug", action="store_true", default=False, dest="debug", help="Run application in debug mode.")
 parser.add_argument("-l", "--local", action="store_true", default=False, dest="local", help="Make application run on 127.0.0.1. Externally invisible.")
+parser.add_argument("-t", "--telegram", action="store_true", default=False, dest="telegram", help="Run Telegram bot component.")
 args = parser.parse_args()
 
 # The only purpose of this run is to run our Flask Application in our IoT_CA1 Package
@@ -24,8 +25,12 @@ args = parser.parse_args()
 #         db.session.commit()
 
 #app = create_app()
-
 if __name__ == "__main__":
+    if args.telegram and args.debug:
+        print("\nWarning. Debug mode and telegram bot cannot launch together. Stop launching telegram bot.\n\n")
+    if args.telegram and not args.debug: # Cannot launch together with debug mode because debugging will cause this script to run multiple times and telepot MessageLoop only allows one instance.
+        bot = TelegramBot()
+        bot.run()
     app.run(debug=args.debug, host=None if args.local else "0.0.0.0")
 
 # Dependencies installed while developing this web application

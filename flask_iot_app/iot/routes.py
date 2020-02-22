@@ -30,7 +30,7 @@ def GetAQ(device_id = "woodlands", timeframe = 0):
     # sixty_min_ago = last_rec.timestamp - timedelta(minutes=120)
     # data = AirQuality.query.filter(AirQuality.timestamp > sixty_min_ago).all()
     last_rec = AirQuality.query(device_id, scan_index_forward=False, limit=1).next()
-    earlier_rec = last_rec.timestamp - timedelta(minutes=120)
+    earlier_rec = last_rec.timestamp - timedelta(minutes=m)
     data = AirQuality.query(device_id, AirQuality.timestamp > earlier_rec, scan_index_forward=True)
 
     # Within a minute, there can be many records, aggregate the records and take average

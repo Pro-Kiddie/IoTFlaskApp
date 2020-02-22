@@ -57,6 +57,10 @@ def Factory(device_id):
         image_dict[image.fn] = label_dict
         timestamp_dict[image.fn] = image.timestamp.strftime("%Y-%m-%d %H:%M:%S")
 
+    # Retrieve current PM threshold values for the device
+    pm25Threshold = Status.get(device_id + "_pm25Threshold").status
+    pm10Threshold = Status.get(device_id + "_pm10Threshold").status
+
     # Create the form for updating PM thresholds for the device which will be rendered in the model
     form = UpdateThresholdForm(device_id=device_id)
     if form.validate_on_submit():
@@ -65,7 +69,7 @@ def Factory(device_id):
         new_pm25.update(actions=[Status.status.set(str(round(float(form.pm_25.data), 1)))])
         new_pm10.update(actions=[Status.status.set(str(round(float(form.pm_10.data), 1)))])
         flash("PM 2.5 and PM 10 thresholds updated.", "success")
-    return render_template('dashboard.html', device_id=device_id, image_dict=image_dict, timestamp_dict=timestamp_dict, form=form)#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
+    return render_template('dashboard.html', device_id=device_id, image_dict=image_dict, timestamp_dict=timestamp_dict, pm25Threshold=pm25Threshold, pm10Threshold=pm10Threshold, form=form)#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
 
 # Door Camera Page
 @main.route("/door_camera")

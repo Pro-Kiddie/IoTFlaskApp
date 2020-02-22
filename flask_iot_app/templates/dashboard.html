@@ -104,8 +104,16 @@
         </ul>
     </div>
     <div class="col-6" style="text-align: right;">
-        <button type="button" class="btn btn-primary mr-3" data-toggle="modal" data-target="#mediumModal">
-            Update PM Thresholds
+        <button type="button" class="btn btn-primary mr-1">
+            PM 2.5 Threshold
+            <span class="badge badge-light">{{ pm25Threshold }}</span>
+        </button>
+        <button type="button" class="btn btn-primary mr-1">
+            PM 10 Threshold
+            <span class="badge badge-light">{{ pm10Threshold }}</span>
+        </button>
+        <button type="button" class="btn btn-warning mr-3" data-toggle="modal" data-target="#mediumModal">
+            Update
         </button>
     </div>
     
