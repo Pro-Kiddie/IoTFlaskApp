@@ -1,10 +1,12 @@
-import os, botocore
+import os, botocore, json
+from AWSIoTPythonSDK.MQTTLib import AWSIoTMQTTClient
 from datetime import datetime, timedelta, timezone
 from decimal import Decimal
 from flask import jsonify, Blueprint, Response, redirect, url_for, current_app
 from flask_login import login_required
 from flask_iot_app import s3
 from flask_iot_app.models import AirQuality, Status, AQImage, Device
+from time import sleep
 # from flask_iot_app.iot.camera_pi import Camera
 # from flask_iot_app import led, buzzer
 
@@ -159,6 +161,27 @@ def toggleAllBuzzers(status = "state"):
         new_status = Status(hash_key)
         new_status.update(actions=[Status.status.set(status.lower())])
     return jsonify({"buzzer_status": status.capitalize()})
+
+@iot.route("/allTakePhoto")
+def allTakePhoto():
+    mqtt_client = AWSIoTMQTTClient(current_app.config['MQTT_CLIENT_NAME'])
+    mqtt_client.configureEndpoint(current_app.config['AWS_HOST'], 8883)
+    mqtt_client.configureCredentials(current_app.config['AWS_ROOT_CA'], current_app.config['AWS_PRIVATE_KEY'], current_app.config['AWS_CERTIFICATE'])
+    mqtt_client.configureOfflinePublishQueueing(-1)  # Infinite offline Publish queueing
+    mqtt_client.configureDrainingFrequency(2)  # Draining: 2 Hz
+    mqtt_client.configureConnectDisconnectTimeout(10)  # 10 sec
+    mqtt_client.configureMQTTOperationTimeout(5)  # 5 sec
+    if not mqtt_client.connect():
+            raise Exception("Unable to connect to AWS MQTT broke.")
+
+    device_list = [device.device_id for device in Device.scan()]
+
+    for device in device_list:
+        mqtt_client.publish("status/{}/takephoto".format(device), json.dumps({"comp" : "camera", "status" : "take"}), 1)
+        sleep(1)
+    print("Taking photos for ALL")
+
+    return 'OK'
 
 @iot.route("/image")
 @iot.route("/image/<fn>")
