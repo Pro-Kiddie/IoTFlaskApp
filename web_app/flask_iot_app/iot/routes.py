@@ -154,6 +154,7 @@ def buzzerState(device_id = "woodlands", status = "state"):
     return jsonify({"buzzer_status": status.capitalize()})
 
 @iot.route("/allBuzzer/<status>")
+@login_required
 def toggleAllBuzzers(status = "state"):
     query = Device.scan()
     for device in query:
@@ -163,6 +164,7 @@ def toggleAllBuzzers(status = "state"):
     return jsonify({"buzzer_status": status.capitalize()})
 
 @iot.route("/allTakePhoto")
+@login_required
 def allTakePhoto():
     mqtt_client = AWSIoTMQTTClient(current_app.config['MQTT_CLIENT_NAME'])
     mqtt_client.configureEndpoint(current_app.config['AWS_HOST'], 8883)
@@ -179,9 +181,8 @@ def allTakePhoto():
     for device in device_list:
         mqtt_client.publish("status/{}/takephoto".format(device), json.dumps({"comp" : "camera", "status" : "take"}), 1)
         sleep(1)
-    print("Taking photos for ALL")
 
-    return 'OK'
+    return jsonify({"result" : "Taking photos for all devices. Please check your telegram bot."})
 
 @iot.route("/image")
 @iot.route("/image/<fn>")

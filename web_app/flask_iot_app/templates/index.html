@@ -8,6 +8,8 @@
 {% endblock chartsjs %}
 
 {% block content %}
+<div class="alert alert-{{ category }}" style="width: 100%; display: none;" id="flash_message">
+</div>
 <!-- Air Quality Cards & Buzzer Control Card -->
 <div class="row m-t-10">
     <div class="col-lg-12">
@@ -301,7 +303,13 @@
     )
     }, 10000);
     function all_photo(){
-        $.get("{{url_for('iot.allTakePhoto')}}");
+        $.get("{{url_for('iot.allTakePhoto')}}", function(reply){
+            console.log(reply);
+            var flash_msg_box = document.getElementById("flash_message");
+            flash_msg_box.innerHTML = reply.result;
+            flash_msg_box.className += "success";
+            flash_msg_box.style.display = "block";
+        });
     }
     function toggle_buzzer(){
         if (buzzer_btn.checked == true) $.get("{{ url_for('iot.toggleAllBuzzers',status='On') }}");
