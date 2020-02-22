@@ -1,5 +1,5 @@
 import json, boto3, botocore
-from models import Device, Status
+from flask_iot_app.models import Device, Status
 from pynamodb.exceptions import PutError
 from botocore.client import ClientError
 
