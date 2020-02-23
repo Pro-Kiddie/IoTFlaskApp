@@ -162,12 +162,32 @@ Create each rule as specified below.
 | db_publish_status | Full access to AWS IoT<br>DescribeStream, GetRecords, GetShardIterator, ListStreams for DynamoDB | Streams on any change in a record in the ‘Status’ table of DynamoDB. A change in records signifies a change in a device component’s state. <br>Publishes the new record value to the 'status/&ltdevice_id&gt/&ltcomponent&gt’ topic so that the devices will be notified and can update their components’ statuses accordingly
 | aq_image_upload   | Full Access to DynamoDB<br>AWS Rekognition<br>GetObject, PutObject to S3 | Triggers on an S3 object creation, which will be the image uploaded by the Lambda function aq_image_mqtt when PM thresholds are exceeded<br>Performs image recognition on the uploaded image with AWS Rekognition and stores the labels detected with the name in the format of &ltdevice_id&gt_&ltrandom_hex&gt.jpg into the ‘AQImage’ table in DynamoDB for the web interface to retrieve
 
+#### 4. Creating an EC2 Instance to host the web server
+1. AWS EC2 Setup Process https://aws.amazon.com/ec2/getting-started/
+2. Create an EC2 instance (Ubuntu 18 used). Make sure public IP will be assigned. Tick the option when configuring the instance
+3. Create an role for the EC2 instance. Make sure it has full access to AWS IOT, DynamoDB, S3
+4. Add a rule to the security group attacked to your instance to allow inbound traffic on port 5000. https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/authorizing-access-to-an-instance.html
+5. Transfer the web_app to the EC2 instance
+6. Install the following packages
+    - sudo apt-get update
+    - sudo apt-get install build-essential libssl-dev libffi-dev
+    - sudo apt-get install gcc libpq-dev -y
+    - sudo apt-get install python-dev  python-pip -y
+    - sudo apt-get install python3-dev python3-pip python3-venv python3-wheel -y
+    - pip3 install wheel
+7. In the web_app directory, create an python3 virtual environment
+8. Install the the packages in requirements.txt with pip install -r requirements.txt
+9. Make sure the config.json is filled up properly. E.g. mqtt_client_name and the certs and private keys required by MQTT client is inside the web_app directory.
+10. Run the web app with python3 run.py -t
+11. If the Gmail fails to send password reset email due to Google security:
+    - Enable allow less secure app http://stackoverflow.com/questions/26852128/smtpauthenticationerror-when-sending-mail-using-gmail-and-python
+    - Unlock Captcha to allow your Gmail account from sending location at the AWS instance https://stackoverflow.com/questions/35659172/django-send-mail-from-ec2-via-gmail-gives-smtpauthenticationerror-but-works
+
 ### Registring All Devices to the AQ Mon Platform
 Run setup-device.py to register the device_ids defined in config.json
 ``` bash
 python setup-device.py
 ```
-
 ### Setting Up Individual Devices
 For each device that has to be tracked by AQ Mon, the following must be performed to configure the device appropriately to run the monitoring program.
 
@@ -202,23 +222,27 @@ Lines 104-107 contain the necessary instructions use randomly generated PM value
 # MainApp.pm_10 = round(random.uniform(5, 400), 1)
 ```
 
-#### Creating an EC2 Instance to host the web server
-1. AWS EC2 Setup Process https://aws.amazon.com/ec2/getting-started/
-2. Create an EC2 instance (Ubuntu 18 used). Make sure public IP will be assigned. Tick the option when configuring the instance
-3. Create an role for the EC2 instance. Make sure it has full access to AWS IOT, DynamoDB, S3
-4. Add a rule to the security group attacked to your instance to allow inbound traffic on port 5000. https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/authorizing-access-to-an-instance.html
-5. Transfer the web_app to the EC2 instance
-6. Install the following packages
-    - sudo apt-get update
-    - sudo apt-get install build-essential libssl-dev libffi-dev
-    - sudo apt-get install gcc libpq-dev -y
-    - sudo apt-get install python-dev  python-pip -y
-    - sudo apt-get install python3-dev python3-pip python3-venv python3-wheel -y
-    - pip3 install wheel
-7. In the web_app directory, create an python3 virtual environment
-8. Install the the packages in requirements.txt with pip install -r requirements.txt
-9. Make sure the config.json is filled up properly. E.g. mqtt_client_name and the certs and private keys required by MQTT client is inside the web_app directory.
-10. Run the web app with python3 run.py -t
-11. If the Gmail fails to send password reset email due to Google security:
-    - Enable allow less secure app http://stackoverflow.com/questions/26852128/smtpauthenticationerror-when-sending-mail-using-gmail-and-python
-    - Unlock Captcha to allow your Gmail account from sending location at the AWS instance https://stackoverflow.com/questions/35659172/django-send-mail-from-ec2-via-gmail-gives-smtpauthenticationerror-but-works
+### Starting AQ Mon
+1. Connect the hardware as shown in the Fritzing Diagram
+2. Install the USB driver for SDS011 PM sensor as described in “Hardware Setup Instructions”
+3. Set up the necessary AWS service components.
+4. Start each AQ Mon tracking device with aq_monitoring/run_aq.py
+    ``` bash
+    source env/bin/activate #Activate the Python Virtual Environment
+    python run.py #Start the monitoring program
+    ```
+5. Start up the Flask Web Server with web_app/run.py
+
+    usage: run.py [-h] [-d] [-l] [-t]
+
+    optional arguments:
+
+    -h, --help        show this help message and exit
+
+    -d, --debug     Run application in debug mode.
+
+    -l, --local         Make application run on 127.0.0.1. Externally invisible.
+
+    -t, --telegram Run Telegram bot component.
+
+
