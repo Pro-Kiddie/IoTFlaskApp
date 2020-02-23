@@ -70,3 +70,6 @@ if __name__ == "__main__":
 # Install the the packages in requirements.txt with pip install -r requirements.txt
 # Make sure the config.json is filled up properly. E.g. mqtt_client_name and the certs and private keys required by MQTT client is inside the web_app directory.
 # Run the web app with python3 run.py -t
+# If the Gmail fails to send password reset email due to Google security:
+    # Enable allow less secure app http://stackoverflow.com/questions/26852128/smtpauthenticationerror-when-sending-mail-using-gmail-and-python
+    # Unlock Captcha to allow your Gmail account from sending location at the AWS instance https://stackoverflow.com/questions/35659172/django-send-mail-from-ec2-via-gmail-gives-smtpauthenticationerror-but-works
