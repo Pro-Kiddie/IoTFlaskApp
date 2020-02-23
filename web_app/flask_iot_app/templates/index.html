@@ -3,19 +3,67 @@
 {% block chartsjs %}
     <script type="text/javascript" src="/static/js/echarts.js"></script>
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/echarts/map/js/world.js"></script>
-    <script type="text/javascript" src="https://api.map.baidu.com/api?v=2.0&ak=xfhhaTThl11qYVrqLZii6w8qE5ggnhrY&__ec_v__=20190126"></script>
+    <script type="text/javascript" src="https://api.map.baidu.com/api?v=2.0&ak=zB0RB42SDUGwOlYEfpVBodKlsd1AUX94"></script>
     <script type="text/javascript" src="/static/js/extension/bmap.js"></script>
 {% endblock chartsjs %}
 
 {% block content %}
+<div class="alert alert-{{ category }}" style="width: 100%; display: none;" id="flash_message">
+</div>
 <!-- Air Quality Cards & Buzzer Control Card -->
 <div class="row m-t-10">
     <div class="col-lg-12">
-        <div class="au-card m-b-30" style="padding: 20px 10px 0px 10px;">
+        <div class="au-card m-b-30">
             <div class="au-card-inner">
                 <h3 class="title-2" style="margin-left: 20px;">Singapore Air Quality Overview</h3>
             
-                <div id="mapchart" style="width:auto; height:600px; margin:auto; padding:20px 0 20px 0"></div>
+                <div id="mapchart" style="width:auto; height:450px; margin:auto;padding-top:10px; "></div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Air Quality Cards & Buzzer Control Card -->
+<div class="row m-t-10">
+    
+    <div class="col-sm-6 col-lg-6">
+        <div class="overview-item overview-item--c3" style="padding: 20px 20px 0px 20px; margin-bottom:20px;">
+            <div class="overview__inner">
+                <div class="overview-box clearfix">
+                    <div class="icon" style="margin-right:10px;">
+                        <i class="fa fa-camera" style="font-size: 50px;"></i>
+                    </div>
+                    <div class="text">
+                        <h2 style="font-size:20px;">All Devices</h2>
+                        <h2>Take Photo</h2>
+                    </div>
+                </div>
+                <div class="overview-chart" style="padding-top: 20px; text-align: center;">
+                    <button type="button" class="btn btn-warning" style="width:100px;height:50px;margin-top:10px;" onclick="all_photo()">
+                        Cheese!
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-6 col-lg-6">
+        <div class="overview-item overview-item--c1" style="padding: 20px 20px 0px 20px; margin-bottom:20px;">
+            <div class="overview__inner">
+                <div class="overview-box clearfix">
+                    <div class="icon" style="margin-right:10px;">
+                        <i class="fa fa-volume-up" style="font-size: 50px;"></i>
+                    </div>
+                    <div class="text">
+                        <h2 style="font-size:20px;">All Devices</h2>
+                        <h2>Sound</h2>
+                    </div>
+                </div>
+                <div class="overview-chart" style="padding-top: 20px; text-align: center;">
+                    <label class="switch switch-text switch-primary switch-pill" style="width:100px;height:50px;margin-top:10px;">
+                        <input type="checkbox" class="switch-input" id="buzzer_btn" onclick="toggle_buzzer()">
+                        <span data-on="On" data-off="Off" class="switch-label" style="font-size: 20px;"></span>
+                        <span class="switch-handle" style="top:5px; width:40px; height: 40px;"></span>
+                    </label>
+                </div>
             </div>
         </div>
     </div>
@@ -27,10 +75,7 @@
     
     var mapchart = echarts.init(document.getElementById('mapchart'));
     option = {
-    title: {
-        text: 'Singapore Air Quality Overview',
-        left: 'center'
-    },
+    
     tooltip : {
         trigger: 'item',
     },
@@ -138,25 +183,48 @@
                 }
             }]
         }
-    },
+    },visualMap: {
+                // orient: "horizontal",
+                text:['hazardous','healthy'],
+                bottom: 10,
+                right: 10,
+                pieces: [{
+                    gt: 0,
+                    lte: 50,
+                    color: '#009966'
+                }, {
+                    gt: 50,
+                    lte: 100,
+                    color: '#1199ff'
+                }, {
+                    gt: 100,
+                    lte: 200,
+                    color: '#ffde33'
+                }, {
+                    gt: 200,
+                    lte: 300,
+                    color: '#ff9933'
+                },{
+                    gt: 300,
+                    color: '#cc0033'
+                }],
+                outOfRange: {
+                    color: '#999'
+                }
+            },
     series : [
         {
-            name: 'PM2.5 + PM10: ',
+            name: 'PM2.5: ',
             type: 'scatter',
             coordinateSystem: 'bmap',
-            data: [
-                    {{ hi }}
-                ],
+            data: [],
             symbolSize: function (val) {
-                return val[2];
+                return val[2]/2;
             },
             label: {
                 formatter: '{b}',
-                position: 'right',
-                show: false
-            },
-            itemStyle: {
-                color: 'purple'
+                position: 'bottom',
+                show: true
             },
             emphasis: {
                 label: {
@@ -170,22 +238,23 @@
     mapchart.setOption(option);
     $.get("{{url_for('iot.getAQMap')}}", function (mapdata) {
         console.log(mapdata)
-        mapchart.setOption(option = {    series : [
+        mapchart.setOption(option = {   series : [
         {
-            name: 'PM2.5 + PM10: ',
+            name: 'PM2.5: ',
             type: 'scatter',
             coordinateSystem: 'bmap',
             data: mapdata,
             symbolSize: function (val) {
-                return val[2];
+                if (val[2]/2<40){
+                    return 40;
+                }
+                return val[2]/2;
             },
             label: {
                 formatter: '{b}',
-                position: 'right',
-                show: false
-            },
-            itemStyle: {
-                color: 'purple'
+                position: 'left',
+                show: false,
+                color:"black"
             },
             emphasis: {
                 label: {
@@ -199,5 +268,52 @@
     });
 }
     )
+    setInterval(function () {    
+    $.get("{{url_for('iot.getAQMap')}}", function (mapdata) {
+        console.log(mapdata)
+        mapchart.setOption(option = {   series : [
+        {
+            name: 'PM2.5: ',
+            type: 'scatter',
+            coordinateSystem: 'bmap',
+            data: mapdata,
+            symbolSize: function (val) {
+                if (val[2]/2<40){
+                    return 40;
+                }
+                return val[2]/2;
+            },
+            label: {
+                formatter: '{b}',
+                position: 'left',
+                show: false,
+                color:"black"
+            },
+            emphasis: {
+                label: {
+                    show: true
+                }
+            }
+        },
+
+    ]
+        
+    });
+}
+    )
+    }, 10000);
+    function all_photo(){
+        $.get("{{url_for('iot.allTakePhoto')}}", function(reply){
+            console.log(reply);
+            var flash_msg_box = document.getElementById("flash_message");
+            flash_msg_box.innerHTML = reply.result;
+            flash_msg_box.className += "success";
+            flash_msg_box.style.display = "block";
+        });
+    }
+    function toggle_buzzer(){
+        if (buzzer_btn.checked == true) $.get("{{ url_for('iot.toggleAllBuzzers',status='On') }}");
+        else if (buzzer_btn.checked == false) $.get("{{ url_for('iot.toggleAllBuzzers',  status='Off') }}");
+    }
 </script>
 {% endblock javascript %}

@@ -69,7 +69,7 @@
                         <i class="fa fa-volume-up" style="font-size: 45px;"></i>
                     </div>
                     <div class="text">
-                        <h2 style="font-size:20px;"><span style="text-transform:capitalize;">{{ device_id }}</span></h2>
+                        <h2 style="font-size:20px;text-transform:capitalize;">{{ device_id }}</h2>
                         <h2>Sound</h2>
                     </div>
                 </div>
@@ -552,7 +552,7 @@
             if (data.buzzer_status === "On") buzzer_btn.checked = true;
             else buzzer_btn.checked = false;
         })
-    }, 60000);
+    }, 10000);
 
     function toggle_buzzer(){
         if (buzzer_btn.checked == true) $.get("{{ url_for('iot.buzzerState', device_id = device_id, status='On') }}");

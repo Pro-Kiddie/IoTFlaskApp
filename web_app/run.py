@@ -53,3 +53,20 @@ if __name__ == "__main__":
 # python3 -m pip install twilio
 # python3 -m pip install rpi.GPIO
 # python3 -m pip install gpiozero
+
+# AWS EC2 Setup Process https://aws.amazon.com/ec2/getting-started/
+# Create an EC2 instance (Ubuntu 18 used). Make sure public IP will be assigned. Tick the option when configuring the instance
+# Create an role for the EC2 instance. Make sure it has full access to AWS IOT, DynamoDB, S3
+# Add a rule to the security group attacked to your instance to allow inbound traffic on port 5000. https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/authorizing-access-to-an-instance.html
+# Transfer the web_app to the EC2 instance
+# Install the following packages
+    # sudo apt-get update
+    # sudo apt-get install build-essential libssl-dev libffi-dev
+    # sudo apt-get install gcc libpq-dev -y
+    # sudo apt-get install python-dev  python-pip -y
+    # sudo apt-get install python3-dev python3-pip python3-venv python3-wheel -y
+    # pip3 install wheel
+# In the web_app directory, create an python3 virtual environment
+# Install the the packages in requirements.txt with pip install -r requirements.txt
+# Make sure the config.json is filled up properly. E.g. mqtt_client_name and the certs and private keys required by MQTT client is inside the web_app directory.
+# Run the web app with python3 run.py -t

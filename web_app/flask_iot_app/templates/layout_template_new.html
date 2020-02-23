@@ -71,11 +71,11 @@
                         </li>
                         <li class="has-sub">
                             <a class="js-arrow" href="#">
-                                <i class="fas fa-industry"></i>Factories</a>
+                                <i class="fas fa-industry"></i>Devices</a>
                             <ul class="list-unstyled navbar__sub-list js-sub-list">
                                 {% for device_id in get_device_ids() %}
                                     <li>
-                                        <a href="/factory/{{ device_id }}">
+                                        <a href="/device/{{ device_id }}">
                                             <span style="text-transform:capitalize;">{{ device_id }}</span></a>
                                     </li>
                                 {% endfor %}
@@ -114,11 +114,11 @@
 
                         <li class="has-sub">
                             <a class="js-arrow" href="#">
-                                <i class="fas fa-industry"></i>Factories</a>
+                                <i class="fas fa-industry"></i>Devices</a>
                             <ul class="list-unstyled navbar__sub-list js-sub-list">
                                 {% for device_id in get_device_ids() %}
                                     <li>
-                                        <a href="/factory/{{ device_id }}">
+                                        <a href="/device/{{ device_id }}">
                                             <span style="text-transform:capitalize;">{{ device_id }}</span></a>
                                     </li>
                                 {% endfor %}

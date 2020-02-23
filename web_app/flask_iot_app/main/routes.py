@@ -38,23 +38,23 @@ main = Blueprint("main", __name__)
 @login_required
 def Home():
     # captures = ImageCapture.query.order_by(ImageCapture.id.desc()).limit(4).all()
-    hi = Markup('''{
-                        name:"Admiralty",
-                        value:[103.7948,1.4954,90]
-                    },
-                    {
-                        name:"Sembawang",
-                        value:[103.7948,1.4554,10]
-                    },
-                    {
-                        name:"Woodlands",
-                        value:[103.7948,1.4154,10]
-                    }''')
-    return render_template('index.html',hi=hi)#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
+    # hi = Markup('''{
+    #                     name:"Admiralty",
+    #                     value:[103.7948,1.4954,90]
+    #                 },
+    #                 {
+    #                     name:"Sembawang",
+    #                     value:[103.7948,1.4554,10]
+    #                 },
+    #                 {
+    #                     name:"Woodlands",
+    #                     value:[103.7948,1.4154,10]
+    #                 }''')
+    return render_template('index.html')#,hi=hi)#, captures=captures, timezone=timezone) # Must return the page. Flask will render what your this function returns for the URL specified
 
-@main.route("/factory/<device_id>", methods=['GET', 'POST']) # Function Decorators provided by Flask -> Takes in our function and serve it when the route is accessed
+@main.route("/device/<device_id>", methods=['GET', 'POST']) # Function Decorators provided by Flask -> Takes in our function and serve it when the route is accessed
 @login_required 
-def Factory(device_id):
+def device(device_id):
     # captures = ImageCapture.query.order_by(ImageCapture.id.desc()).limit(4).all()
     # Retrieve records about the last 5 image taken when AQ thresholds are exceeded for that device
     last_5_images = AQImage.query(device_id, scan_index_forward=False, limit=5)

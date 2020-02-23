@@ -151,18 +151,22 @@ def buzzerState(device_id = "woodlands", status = "state"):
         hash_key = device_id + "_" + "buzzer"
         new_status = Status(hash_key)
         new_status.update(actions=[Status.status.set(status.lower())])
+        #sleep(1)
     return jsonify({"buzzer_status": status.capitalize()})
 
 @iot.route("/allBuzzer/<status>")
+@login_required
 def toggleAllBuzzers(status = "state"):
     query = Device.scan()
     for device in query:
         hash_key = device.device_id + "_" + "buzzer"
         new_status = Status(hash_key)
         new_status.update(actions=[Status.status.set(status.lower())])
+        #sleep(1)
     return jsonify({"buzzer_status": status.capitalize()})
 
 @iot.route("/allTakePhoto")
+@login_required
 def allTakePhoto():
     mqtt_client = AWSIoTMQTTClient(current_app.config['MQTT_CLIENT_NAME'])
     mqtt_client.configureEndpoint(current_app.config['AWS_HOST'], 8883)
@@ -179,9 +183,8 @@ def allTakePhoto():
     for device in device_list:
         mqtt_client.publish("status/{}/takephoto".format(device), json.dumps({"comp" : "camera", "status" : "take"}), 1)
         sleep(1)
-    print("Taking photos for ALL")
 
-    return 'OK'
+    return jsonify({"result" : "Taking photos for all devices. Please check your telegram bot."})
 
 @iot.route("/image")
 @iot.route("/image/<fn>")
@@ -214,7 +217,7 @@ def getAQMap():
     for device in devices:
         record = {'name' : device.device_id.capitalize(), 'value' : device.geo_coord}
         latest_reading = AirQuality.query(device.device_id, scan_index_forward=False, limit=1).next()
-        record['value'].append(latest_reading.pm_25+latest_reading.pm_10)
+        record['value'].append(latest_reading.pm_25)
         result.append(record)
     return jsonify(result)
 
