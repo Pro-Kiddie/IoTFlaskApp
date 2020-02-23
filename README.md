@@ -11,7 +11,7 @@ To establish access control to these IoT devices, the web application has implem
 1. [Screenshots](#screenshots)
 2. [Technologies Used](#technologies-used)
 3. [Hardware Setup](#raspberry-pi-hardware-setup)
-4. [Software Setup](#raspberry-pi-software-setup)
+4. [Software Setup](#software-setup)
 
 
 ## ScreenShots
@@ -97,7 +97,7 @@ modinfo ch341 # To confirm driver kernel module installed successfully.
 dmesg | grep ‘ch341-uart converter now attached to ttyUSB0’ # To confirm Raspberry has attached SDS011 to ttyUSB0.
 ```
 
-## Raspberry PI Software Setup
+## Software Setup
 
 ### Setting up the necessary configuration files
 Edit the “config.json” in project folder for all configurations need to be set:
