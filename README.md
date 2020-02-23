@@ -1,11 +1,17 @@
-# IoT Flask Web Application on Raspberry Pi
-An Flask web application developed for IoT devices setup on a Raspberry Pi. 
+# AQ Mon Air Quality Monitoring System
+AQ Mon is a scalable air quality monitoring platform with smart alerts, an analytical and self-defense system, used to monitor the air quality of multiple locations in the form of PM2.5 and PM10 readings. It can be controlled via a web interface or a Telegram bot.
 
-The web application allows user to visualise real-time and historical air quality (PM 2.5 & PM 10) data and send SMS alerts once the air quality passed a certain threshold. It also allows users to get real-time air quality readings and turn on/off an air quality warning buzzer via a Telegram bot.
+The web interface allows for the viewing of real-time PM2.5 and PM 10 readings, as well as the controlling of all devices attached to AQ Mon.
 
-The web application also supports live-streaming of door camera and captures an image when motion is sensed at door which is also sent to users via Telegram bot.
+Configurable PM2.5 and PM10 threshold values act as triggers for the AQ Mon alert system. When these thresholds are exceeded, an SMS alert is sent, a warning LED is lit up, and an image of the monitored location is taken. This image is run through an image recognition algorithm to generate labels to detect the cause of the spike in PM readings. Analytics in the form of historical air quality graphs across different time ranges can be viewed through the web interface. 
 
-To establish access control to these IoT devices, the web application has implemented user login, account management and password reset. 
+Upon investigation, a warning buzzer can be turned on and off, either through the web interface or Telegram bot, to warn the subjects being monitored that their activities are causing air pollution.
+
+A Telegram bot is implemented as a way to interact with AQ Mon. Through the Telegram bot, users may get the PM2.5 and PM10 readings,control the warning buzzer, and initiate photo taking for one or all of the connected devices.
+
+Motion-initiated photo acts as a self-defense system and acts as a deterrence to tampering. It also serves as evidence in such situations.
+
+The user login, access control, account management, and password reset systems are in place for the AQ Mon web server.
 
 ## Table of Contents
 1. [Screenshots](#screenshots)
@@ -16,7 +22,7 @@ To establish access control to these IoT devices, the web application has implem
 
 ## ScreenShots
 Main Dashboard (All Devices)
-![Air Quality Dashboard](/screenshots/aq_dashboard.png)
+![Air Quality Dashboard](screenshots/aq_dashboard.png)
 
 Device-Specific Dashboard
 ![Device Specific Dashboard](/screenshots/aq_device.png)
@@ -33,6 +39,14 @@ Custom Error Pages
 ![Custom Error Pages](/screenshots/custom_error_pages.png)
 
 ## Technologies Used
+- AWS IoT Core
+- AWS DynamoDB
+- AWS S3/S3 Events
+- AWS Rekognition
+- AWS Lambda
+- AWS Database Streaming
+- AWS EC2
+- MQTT
 - Flask
 - Flask-login
    - Flask login manager for access controls. 
@@ -41,7 +55,7 @@ Custom Error Pages
 - Flask Blueprint
 - TimedJSONWebSignatureSerializer
    - Generates one-time password reset URLs and able to store information such as user ID with the URL for verification purpose.
-- SQLAlchemy
+- PynamoDB
    - Object-Relation Mapper.
    - Access database in an object-oriented way.
 - WTForms
@@ -51,8 +65,11 @@ Custom Error Pages
 - Jinja
    - HTML Template inheritance.
 - Bootstrap
+- Baidu Maps API
 
 ### Libraries Used
+- AWSIoTPythonSDK
+- boto3
 - Gpiozero
   - For different standard IoT devices; e.g. LED, Motion Sensor
 - PiCamera
@@ -104,15 +121,15 @@ Edit the “config.json” in project folder for all configurations need to be s
 (Refer to “config.json” for example value of each)
 
 ### Generating AWS credentials
-1)	Login to your AWS Account. On the dashboard, select ‘Account Details’ then ‘AWS CLI’
-2)	Save the provided access keys to a file named ‘credentials’
-3)	Move the ‘credentials’ file to where the AWS setup script can read it
-4)	On Windows this is C:\Users\<your user>\.aws\
-5)	On Linux this is ~/.aws/ where ~ is your home directory
-6)	Run setup_aws.py found in the project folder
-a)	Creates the necessary database tables in AWS DynamoDB
-b)	Creates an admin account for the web interface with credentials defined in config.json
-c)	Creates the S3 bucket for storing captured images
+1. Login to your AWS Account. On the dashboard, select ‘Account Details’ then ‘AWS CLI’
+2. Save the provided access keys to a file named ‘credentials’
+3. Move the ‘credentials’ file to where the AWS setup script can read it
+4. On Windows this is C:\Users\<your user>\.aws\
+5. On Linux this is ~/.aws/ where ~ is your home directory
+6. Run setup_aws.py found in the project folder
+    - Creates the necessary database tables in AWS DynamoDB
+    - Creates an admin account for the web interface with credentials defined in config.json
+    - Creates the S3 bucket for storing captured images
 
 ### Setting up AWS Services
 From the same dashboard above, click on ‘AWS Console’. AQ Mon utilises multiple AWS Lambda functions that are called in different AWS functions.
@@ -183,7 +200,9 @@ Create each rule as specified below.
     - Enable allow less secure app http://stackoverflow.com/questions/26852128/smtpauthenticationerror-when-sending-mail-using-gmail-and-python
     - Unlock Captcha to allow your Gmail account from sending location at the AWS instance https://stackoverflow.com/questions/35659172/django-send-mail-from-ec2-via-gmail-gives-smtpauthenticationerror-but-works
 
-### Registring All Devices to the AQ Mon Platform
+### Registering All Devices to the AQ Mon Platform
+Populate the 'all_device_id' field in config.json with device ids intend to be put on the air quality device
+
 Run setup-device.py to register the device_ids defined in config.json
 ``` bash
 python setup-device.py
