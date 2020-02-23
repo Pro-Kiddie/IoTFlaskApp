@@ -26,8 +26,8 @@ User Login System
 ![User Login System](/screenshots/user_login.png)
 
 Password Reset
-![Password Reset](/screenshots/password_reset1.png)
-![Password Reset](/screenshots/password_reset2.png)
+![Password Reset](/screenshots/password_reset1_new.png)
+![Password Reset](/screenshots/password_reset2_new.png)
 
 Custom Error Pages
 ![Custom Error Pages](/screenshots/custom_error_pages.png)
