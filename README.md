@@ -1,5 +1,5 @@
 # AQ Mon Air Quality Monitoring System
-AQ Mon is a scalable air quality monitoring platform with smart alerts, an analytical and self-defense system, used to monitor the air quality of multiple locations in the form of PM2.5 and PM10 readings. It can be controlled via a web interface or a Telegram bot.
+AQ Mon is a scalable air quality monitoring platform with smart alerts, an analytical and motion-based self-defense system, used to monitor the air quality of multiple locations in the form of PM2.5 and PM10 readings. It can be controlled via a web interface or a Telegram bot.
 
 The web interface allows for the viewing of real-time PM2.5 and PM 10 readings, as well as the controlling of all devices attached to AQ Mon.
 
@@ -7,35 +7,38 @@ Configurable PM2.5 and PM10 threshold values act as triggers for the AQ Mon aler
 
 Upon investigation, a warning buzzer can be turned on and off, either through the web interface or Telegram bot, to warn the subjects being monitored that their activities are causing air pollution.
 
-A Telegram bot is implemented as a way to interact with AQ Mon. Through the Telegram bot, users may get the PM2.5 and PM10 readings,control the warning buzzer, and initiate photo taking for one or all of the connected devices.
+A Telegram bot is implemented as a way to interact with AQ Mon. Through the Telegram bot, users may get the PM2.5 and PM10 readings, control the warning buzzer, and initiate photo taking for one or all of the connected devices.
 
 Motion-initiated photo acts as a self-defense system and acts as a deterrence to tampering. It also serves as evidence in such situations.
 
 The user login, access control, account management, and password reset systems are in place for the AQ Mon web server.
 
+> **AQ Mon Introductory Video: [Link](https://www.youtube.com/watch?v=NMMhP3iBm_k&feature=youtu.be)**
+
 ## Table of Contents
-1. [Screenshots](#screenshots)
+1. [AQ Mon in Pictures](#aq-mon-in-picutres)
 2. [Technologies Used](#technologies-used)
-3. [Hardware Setup](#raspberry-pi-hardware-setup)
-4. [Software Setup](#software-setup)
+3. [System Architecture](#system-architecture)
+4. [Hardware Setup](#raspberry-pi-hardware-setup)
+5. [Software Setup](#software-setup)
 
 
-## ScreenShots
-Main Dashboard (All Devices)
+## AQ Mon in Picutres
+**Main Dashboard (All Devices)**
 ![Air Quality Dashboard](screenshots/aq_dashboard.png)
 
-Device-Specific Dashboard
+**Device-Specific Dashboard**
 ![Device Specific Dashboard](/screenshots/aq_device.png)
 ![Alert History](/screenshots/aq_alerts.png)
 
-User Login System
+**User Login System**
 ![User Login System](/screenshots/user_login.png)
 
-Password Reset
+**Password Reset**
 ![Password Reset](/screenshots/password_reset1_new.png)
 ![Password Reset](/screenshots/password_reset2_new.png)
 
-Custom Error Pages
+**Custom Error Pages**
 ![Custom Error Pages](/screenshots/custom_error_pages.png)
 
 ## Technologies Used
@@ -138,7 +141,7 @@ For each section below, the AWS service involved will be listed in parentheses. 
 
 Lambda functions that need to be created will be denoted like this
 
-The code for each lambda function can be found in “aws_lambda” inside the project folder with the prefix “lambda_<function name>”
+The code for each lambda function can be found in “aqmonitoring/aws_lambda” inside the project folder with the prefix “lambda_<function name>”
 
 Additionally, permissions have to be configured for each lambda function that has to be created. These can be found under Services > Lambda. The specific permissions for each lambda function are listed below.
 
@@ -176,15 +179,15 @@ Create each rule as specified below.
 | iot_update_status | Full access to DynamoDB | Listens on ‘status/+’ topic, subscribes to this topic which publishes changes to any IoT device components such as LED, Buzzer and updates the changes to any device components to the database so that the web component is notified
 | aq_alert_sms      | Basic Lambda Execution | IoT devices will publish to ‘aq/sms’ topic when PM thresholds are exceeded on an hourly basis<br>Subscribes to the ‘aq/sms’ topic and sends SMS alerts to configured handphone number via Twilio API
 | aq_image_mqtt     | GetObject, PutObject to S3 | IoT devices will publish image taken when PM readings exceed threshold to ‘aq/image’ topic<br>This function subscribes to the topic and decodes the Base64 encoded image to bytes and uploads it to the S3 bucket with the name specified in the MQTT message payload 
-| db_publish_status | Full access to AWS IoT<br>DescribeStream, GetRecords, GetShardIterator, ListStreams for DynamoDB | Streams on any change in a record in the ‘Status’ table of DynamoDB. A change in records signifies a change in a device component’s state. <br>Publishes the new record value to the 'status/&ltdevice_id&gt/&ltcomponent&gt’ topic so that the devices will be notified and can update their components’ statuses accordingly
-| aq_image_upload   | Full Access to DynamoDB<br>AWS Rekognition<br>GetObject, PutObject to S3 | Triggers on an S3 object creation, which will be the image uploaded by the Lambda function aq_image_mqtt when PM thresholds are exceeded<br>Performs image recognition on the uploaded image with AWS Rekognition and stores the labels detected with the name in the format of &ltdevice_id&gt_&ltrandom_hex&gt.jpg into the ‘AQImage’ table in DynamoDB for the web interface to retrieve
+| db_publish_status | Full access to AWS IoT<br>DescribeStream, GetRecords, GetShardIterator, ListStreams for DynamoDB | Streams on any change in a record in the ‘Status’ table of DynamoDB. A change in records signifies a change in a device component’s state. <br>Publishes the new record value to the 'status/&lt;device_id&gt;/&lt;component&gt;’ topic so that the devices will be notified and can update their components’ statuses accordingly
+| aq_image_upload   | Full Access to DynamoDB<br>AWS Rekognition<br>GetObject, PutObject to S3 | Triggers on an S3 object creation, which will be the image uploaded by the Lambda function aq_image_mqtt when PM thresholds are exceeded<br>Performs image recognition on the uploaded image with AWS Rekognition and stores the labels detected with the name in the format of &lt;device_id&gt;_&lt;random_hex&gt;.jpg into the ‘AQImage’ table in DynamoDB for the web interface to retrieve
 
 #### 4. Creating an EC2 Instance to host the web server
 1. AWS EC2 Setup Process https://aws.amazon.com/ec2/getting-started/
 2. Create an EC2 instance (Ubuntu 18 used). Make sure public IP will be assigned. Tick the option when configuring the instance
 3. Create an role for the EC2 instance. Make sure it has full access to AWS IOT, DynamoDB, S3
-4. Add a rule to the security group attacked to your instance to allow inbound traffic on port 5000. https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/authorizing-access-to-an-instance.html
-5. Transfer the web_app to the EC2 instance
+4. Add a rule to the security group attached to your instance to allow inbound traffic on port 5000. https://docs.aws.amazon.com/AWSEC2/latest/UserGuide/authorizing-access-to-an-instance.html
+5. Transfer the web_app folder to the EC2 instance
 6. Install the following packages
     - sudo apt-get update
     - sudo apt-get install build-essential libssl-dev libffi-dev
@@ -201,7 +204,7 @@ Create each rule as specified below.
     - Unlock Captcha to allow your Gmail account from sending location at the AWS instance https://stackoverflow.com/questions/35659172/django-send-mail-from-ec2-via-gmail-gives-smtpauthenticationerror-but-works
 
 ### Registering All Devices to the AQ Mon Platform
-Populate the 'all_device_id' field in config.json with device ids intend to be put on the air quality device
+Populate the 'all_device_id' field in config.json with device ids intend to be put on the air quality devices and their respective geography coordinates that will be used to display each device on a map in web portal.
 
 Run setup-device.py to register the device_ids defined in config.json
 ``` bash
@@ -211,8 +214,8 @@ python setup-device.py
 For each device that has to be tracked by AQ Mon, the following must be performed to configure the device appropriately to run the monitoring program.
 
 #### 1. Setting Up Device Configurations
-- Register the device in IoT Core, and obtain the certificate, private key files for the device
-- Place the certs in “aq_monitoring” found in the project folder
+- Register the device in AWS IoT Core, and obtain the certificate, private key files for the device
+- Place the certs in “aq_monitoring” folder found in the root project folder
 - Configure device_config.json found in “aq_monitoring” . The following needs to be updated
   - ‘aws_host’, ‘aws_root_ca’, ‘aws_certificate’ and ‘aws_private_key’ should correspond to the information obtained by registering the device in IoT Core
   -‘device_id’ should be set to a device_id that is already registered on the AQ Mon platform
@@ -242,15 +245,10 @@ Lines 104-107 contain the necessary instructions use randomly generated PM value
 ```
 
 ### Starting AQ Mon
-1. Connect the hardware as shown in the Fritzing Diagram
-2. Install the USB driver for SDS011 PM sensor as described in “Hardware Setup Instructions”
-3. Set up the necessary AWS service components.
-4. Start each AQ Mon tracking device with aq_monitoring/run_aq.py
-    ``` bash
-    source env/bin/activate #Activate the Python Virtual Environment
-    python run.py #Start the monitoring program
-    ```
-5. Start up the Flask Web Server with web_app/run.py
+
+#### Start Web Server on AWS EC2
+1. Set up the necessary AWS service components.
+2. Start up the Flask Web Server with web_app/run.py
 
     usage: run.py [-h] [-d] [-l] [-t]
 
@@ -265,3 +263,12 @@ Lines 104-107 contain the necessary instructions use randomly generated PM value
     -t, --telegram Run Telegram bot component.
 
 
+#### Start Monitoring Program on Individual RaspberryPi Device
+1. Connect the hardware as shown in the Fritzing Diagram
+2. Install the USB driver for SDS011 PM sensor as described in “Hardware Setup Instructions”
+3. Register the RaspberryPi device on AWS described above
+3. Start each AQ Mon tracking device with aq_monitoring/run_aq.py
+    ``` bash
+    source env/bin/activate #Activate the Python Virtual Environment
+    python run_aq.py #Start the monitoring program
+    ```
