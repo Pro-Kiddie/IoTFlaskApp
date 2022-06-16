@@ -58,7 +58,7 @@ more-itertools==8.0.2
 multidict==4.7.4
 nbconvert==5.6.1
 nbformat==4.4.0
-notebook==6.0.2
+notebook==6.4.12
 olefile==0.46
 pandocfilters==1.4.2
 parso==0.5.2
